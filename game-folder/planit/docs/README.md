@@ -29,7 +29,7 @@ URL shortcuts for testing:
 |---|---|
 | `index.html`, `css/planit.css` | Page shell, HUD, start page, and modal; one visual language (cream panels with a chunky tile edge, teal ink, planIt green). |
 | `js/main.js` | Wires the screens, HUD, tray, challenges, city search, and sound together. |
-| `js/map-source.js` | Where the map comes from: a backend scene, a map URL, or the bundled San Francisco map. `requestCity(name)` is the only code that knows the backend's city API. |
+| `js/map-source.js` | Where the map comes from: a backend scene, a map URL, or the bundled San Francisco map. `findPlace(name)` and `buildCity(place, radiusKm)` are the only code that knows the backend's city API. |
 | `tools/planit_terrain.py` | For the backend: `terrain(cells)` adds a terrace level (Copernicus DEM) and a city style and building height (Overture) to each baseline cell. |
 | `js/game.js` | The play screen: scene, camera and controls, selection and painting, build flow, undo, land health toggle, and the `window.planit` API. |
 | `js/world.js` | The editable world engine. It also holds the land health shader patch. |
@@ -72,7 +72,7 @@ Tile index = `row * cols + col`. Row 0 is the north edge and column 0 the west e
 ## Any city
 
 - The map is data only. Landmarks are drawn only when they fall inside the map, so they appear in San Francisco and nowhere else. Gulls pick shore tiles on any map.
-- The start page shows a "Your city" box when a backend answers `/api/health`. Submitting it calls `requestCity` in `js/map-source.js`, waits for the scene, then reloads with `?scene=<id>`. The published artifact has no backend, so the box stays hidden there.
+- New maps, when a backend answers `/api/health`. Freestyle asks "this map or a new map". A new map asks for the city, then a map radius (1 to 6 km from the centre, 4 km by default), builds it, and reloads with `?scene=<id>&play`. Challenge asks for the city first. Keeping this map's city goes straight to the cards. Another city goes through the radius step and reloads with `?scene=<id>&pick=challenge`, which opens the cards. The published artifact has no backend, so Freestyle starts at once and Challenge opens the cards.
 - Land cover comes from the backend's baseline. `tools/planit_terrain.py` adds terrain and buildings; its first run indexes the Overture release (about a minute, cached in `tools/.cache/`).
 
 ## Challenge stories

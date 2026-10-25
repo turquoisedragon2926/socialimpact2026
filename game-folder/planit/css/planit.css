@@ -197,9 +197,9 @@ body:has(#goal:not([hidden])) .controls-hint { display: none; } /* the challenge
 .choice span { font-size: 14px; color: var(--ink-2); }
 .choice:hover { transform: translateY(-3px); box-shadow: 0 9px 0 var(--edge), var(--shadow); }
 .choice:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--edge), var(--shadow); }
-#freestyle-btn { background: var(--green); color: #fff; box-shadow: 0 6px 0 var(--green-deep), var(--shadow); }
-#freestyle-btn span { color: rgba(255,255,255,.85); }
-#freestyle-btn:hover { box-shadow: 0 9px 0 var(--green-deep), var(--shadow); }
+#freestyle-btn, #new-map-btn { background: var(--green); color: #fff; box-shadow: 0 6px 0 var(--green-deep), var(--shadow); }
+#freestyle-btn span, #new-map-btn span { color: rgba(255,255,255,.85); }
+#freestyle-btn:hover, #new-map-btn:hover { box-shadow: 0 9px 0 var(--green-deep), var(--shadow); }
 .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .card {
   border: 0; cursor: pointer; text-align: left; padding: 0 0 14px; border-radius: 18px; overflow: hidden; display: grid; gap: 4px;
@@ -226,6 +226,11 @@ body:has(#goal:not([hidden])) .controls-hint { display: none; } /* the challenge
 .city-row input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--green); }
 .city-status { font-size: 13px; color: var(--ink-2); min-height: 1em; }
 .city-status.bad { color: var(--coral); }
+.city-form { animation: rise 0.3s both; }
+.radius-place { font-size: 20px; font-weight: 600; color: var(--ink); }
+.radius-row { display: flex; align-items: center; gap: 14px; margin: 4px 0 8px; }
+.radius-row input { flex: 1; accent-color: var(--green); }
+.radius-row output { font-size: 15px; color: var(--ink-2); min-width: 190px; }
 
 /* ---------- modal ---------- */
 .modal-wrap { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(35, 57, 61, 0.28); animation: fade 0.25s both; }

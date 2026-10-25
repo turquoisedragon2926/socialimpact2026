@@ -10,8 +10,9 @@
 //   otherwise     the bundled San Francisco map (one tile per backend cell)
 // {api} is ?api=<base>, else window.PLANIT_API, else this page's own origin.
 //
-// The city search box calls requestCity(name). The backend builds a baseline for
-// a place as a background job; this file is the only place that knows its API.
+// The start page's new-map steps call findPlace(name), then buildCity(place, radiusKm).
+// The backend builds a baseline for a place as a background job; this file is the
+// only place that knows its API.
 
 const params = new URLSearchParams(location.search);
 export const API = params.get('api') ?? window.PLANIT_API ?? '';
@@ -37,23 +38,30 @@ export async function cityApiAvailable() {
   } catch { return false; }
 }
 
-// Asks the backend for a new city and resolves with its scene id once the map is
-// ready. onProgress(text) gets short status lines for the loading card.
-// The server finds the place (OpenStreetMap search), then builds a baseline for an
-// 8 km square around it as a background job: ESA WorldCover, NDVI and soil carbon
-// on 165 m cells. The scene is named after the city, so it shows up in My maps.
-export const CITY_KM = 8;
-export async function requestCity(name, onProgress = () => {}) {
-  onProgress(`Finding ${name}…`);
+// Finds a place by name (OpenStreetMap search on the server).
+// Resolves with { name, city, lat, lon }: name is the full place name, city its first part.
+export async function findPlace(name) {
   const places = await json(`${API}/api/search?q=${encodeURIComponent(name)}`);
   if (!places.length) throw new Error(`Couldn't find "${name}". Try adding the country.`);
   const { lat, lon } = places[0];
-  const city = places[0].name.split(',')[0].trim() || name;
-  const dlat = (CITY_KM / 2) / 111.32, dlon = dlat / Math.cos(lat * Math.PI / 180);
+  return { name: places[0].name, city: places[0].name.split(',')[0].trim() || name, lat, lon };
+}
+
+// Builds a map around a place and resolves with its scene id once it is ready.
+// onProgress(text) gets short status lines for the start page.
+// The map is a square reaching radiusKm from the centre on each side. The server
+// builds a baseline for it as a background job: ESA WorldCover, NDVI and soil
+// carbon on 165 m cells. The scene is named after the city, so it shows up in My maps.
+export const RADIUS_KM = { min: 1, max: 6, default: 4 };
+export const CELL_M = 165;
+export async function buildCity(place, radiusKm = RADIUS_KM.default, onProgress = () => {}) {
+  const { lat, lon } = place;
+  const dlat = radiusKm / 111.32, dlon = dlat / Math.cos(lat * Math.PI / 180);
+  onProgress(`Starting ${place.city}…`);
   const { job_id } = await json(`${API}/api/scenes`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: city, lat, lon, year: 2021, location_name: places[0].name.slice(0, 200),
+    body: JSON.stringify({ name: place.city, lat, lon, year: 2021, location_name: place.name.slice(0, 200),
       bounds: [lon - dlon, lat - dlat, lon + dlon, lat + dlat] }),
   });
   for (let tries = 0; tries < 400; tries++) {
@@ -71,9 +79,13 @@ export async function requestCity(name, onProgress = () => {}) {
 }
 
 // Opens a scene by reloading with ?scene=<id>, so every module starts fresh for the new city.
-export function openScene(id) {
+// then: 'play' goes straight into Freestyle, 'challenge' opens the challenge cards.
+export function openScene(id, then = null) {
   const p = new URLSearchParams(location.search);
   p.set('scene', id);
   p.delete('map');
+  for (const k of ['play', 'challenge', 'pick']) p.delete(k);
+  if (then === 'play') p.set('play', '');
+  if (then === 'challenge') p.set('pick', 'challenge');
   location.search = p.toString();
 }
