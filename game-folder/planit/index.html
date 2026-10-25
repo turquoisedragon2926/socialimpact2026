@@ -1,0 +1,138 @@
+<title>planIt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="./css/planit.css">
+
+<div id="sky"></div>
+<div id="stage"><div class="loading" id="loading"><span>Building the city&hellip;</span></div></div>
+
+<!-- ===== in-game HUD ===== -->
+<div id="hud" hidden>
+  <header class="topbar">
+    <button class="wordmark" id="menu-btn" type="button" aria-label="Back to the start page">plan<span>I</span>t</button>
+    <span class="city-badge" id="city-badge" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg>
+      <span id="city-badge-name"></span>
+    </span>
+    <span class="mode-chip" id="mode-chip">Freestyle</span>
+  </header>
+
+  <nav class="tools" aria-label="Game tools">
+    <button type="button" class="tool switch" id="health-btn" aria-pressed="false" title="Land health view (H)">
+      <span class="knob" aria-hidden="true"></span><span>Land health</span>
+    </button>
+    <button type="button" class="tool" id="undo-btn" disabled title="Undo (Ctrl+Z)">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+      <span>Undo</span>
+    </button>
+    <button type="button" class="tool icon" id="view-btn" title="Reset view">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 16 9 5 9-5"/><path d="m3 12 9 5 9-5"/></svg>
+    </button>
+    <button type="button" class="tool icon" id="sound-btn" aria-pressed="true" title="Sound (M)">
+      <svg class="on" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+      <svg class="off" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 6 6"/><path d="m22 9-6 6"/></svg>
+    </button>
+  </nav>
+
+  <!-- challenge goal panel -->
+  <aside class="goal panel" id="goal" hidden>
+    <div class="goal-head">
+      <img id="goal-face" alt="">
+      <div><span class="eyebrow" id="goal-who"></span><h2 id="goal-title"></h2></div>
+    </div>
+    <ul class="goal-rows" id="goal-rows"></ul>
+  </aside>
+
+  <!-- land health legend -->
+  <aside class="legend panel" id="legend" hidden>
+    <span class="eyebrow">Land health</span>
+    <div class="ramp" aria-hidden="true"></div>
+    <div class="ramp-labels"><span>Regenerating</span><span>Stable</span><span>Degrading</span></div>
+    <div class="ramp-nums" aria-hidden="true"><span>&minus;1</span><span>0</span><span>+1</span></div>
+    <p class="note">Values are placeholders until the land model is connected.</p>
+  </aside>
+
+  <!-- bottom tray -->
+  <section class="tray panel" id="tray" aria-label="Land cover tray">
+    <button type="button" class="tray-toggle" id="tray-toggle" aria-expanded="true" aria-controls="covers" title="Hide the tile tray">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span class="tt-label" id="tray-toggle-label">Hide tiles</span>
+    </button>
+    <div class="tray-status">
+      <strong id="sel-count">0 tiles</strong>
+      <span id="sel-hint">Click or drag on the map to pick tiles</span>
+      <button type="button" class="link" id="clear-btn" hidden>Clear</button>
+    </div>
+    <div class="tray-covers" id="covers" role="radiogroup" aria-label="Land cover"></div>
+    <button type="button" class="btn primary build" id="submit-btn" disabled>Submit plan</button>
+  </section>
+
+  <div class="controls-hint">Click or drag to pick tiles &middot; Right-drag to rotate &middot; Shift + right-drag to pan &middot; Scroll to zoom &middot; T hides the tiles</div>
+  <div class="readout" id="readout" hidden></div>
+  <aside class="timeline panel" id="timeline" hidden aria-label="Time-lapse"></aside>
+</div>
+
+<!-- ===== start page ===== -->
+<section id="start" class="screen" hidden>
+  <canvas id="start-canvas"></canvas>
+  <div class="start-inner">
+    <h1 class="title" aria-label="planIt"><span>plan</span><span class="pillar" id="pillar" aria-hidden="true"></span><span>t</span></h1>
+    <p class="subtitle">Plan a city with the land in mind.</p>
+    <div class="choices" id="choices">
+      <button type="button" class="choice" id="freestyle-btn">
+        <strong>Freestyle</strong><span>Build anything. No goals, no rules.</span>
+      </button>
+      <button type="button" class="choice" id="challenge-btn">
+        <strong>Challenge</strong><span>Help a friend reach a goal.</span>
+      </button>
+    </div>
+    <!-- Freestyle home (with the server): your saved maps, and a new one -->
+    <div class="map-home" id="map-home" hidden>
+      <span class="eyebrow">Freestyle · your maps</span>
+      <div class="map-list" id="map-list" aria-label="Your maps"></div>
+    </div>
+    <!-- a new map, step 1: the city -->
+    <form class="city-form" id="city-form" hidden autocomplete="off">
+      <label for="city-input" id="city-label">Your city</label>
+      <div class="city-row">
+        <input id="city-input" type="text" placeholder="Type any city" spellcheck="false">
+        <button type="submit" class="btn small primary" id="city-go">Next</button>
+      </div>
+      <span class="city-status" id="city-status" aria-live="polite"></span>
+    </form>
+    <!-- a new map, step 2: how far it reaches from the city centre -->
+    <form class="city-form" id="radius-form" hidden>
+      <label for="radius-input">Map radius</label>
+      <strong class="radius-place" id="radius-place"></strong>
+      <div class="radius-row">
+        <input id="radius-input" type="range" min="1" max="6" step="0.5" value="4">
+        <output id="radius-out" for="radius-input"></output>
+      </div>
+      <div class="city-row"><button type="submit" class="btn small primary" id="radius-go">Build map</button></div>
+      <span class="city-status" id="radius-status" aria-live="polite"></span>
+    </form>
+    <div class="cards" id="cards" hidden></div>
+    <button type="button" class="link back" id="back-btn" hidden>Back</button>
+  </div>
+</section>
+
+<!-- challenge briefing / result -->
+<div class="modal-wrap" id="modal" hidden>
+  <div class="modal panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <img class="modal-face" id="modal-face" alt="">
+    <div class="modal-body">
+      <span class="eyebrow" id="modal-eyebrow"></span>
+      <h2 id="modal-title"></h2>
+      <div class="speech" id="modal-text"></div>
+      <ul class="goal-rows" id="modal-rows"></ul>
+      <div class="modal-actions" id="modal-actions"></div>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module" src="./js/main.js"></script>

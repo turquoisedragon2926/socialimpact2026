@@ -21,6 +21,7 @@ from schemas import NewScene, ScenePatch, Action, Revision, Clone, Compare
 from schemas import EvaluationRequest, AssistantRequest
 from jobs import JobManager
 import assistant
+import planit_api
 from sources import validate_bounds, ROOT
 
 RUNTIME = Path(os.environ.get("LAND_RUNTIME", ROOT / "runtime"))
@@ -307,3 +308,5 @@ def cancel_task(task_id: str, request: Request):
 
 
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
+app.include_router(planit_api.router(get_scene, current_user))
+app.mount("/planit", StaticFiles(directory=ROOT / "planit", html=True), name="planit")

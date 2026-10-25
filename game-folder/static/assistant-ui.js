@@ -7,21 +7,24 @@ export function renderMarkdown(text){
 
 // Persistent outside the routed map. Closing it never cancels server-side work.
 export function createAssistantUI({api,post,escapeHtml:esc,context,onMutation,onView}){
-  const root=document.createElement('aside');root.id='assistant-panel';root.hidden=true;root.setAttribute('aria-label','Planning assistant');document.body.append(root);
+  const root=document.createElement('aside');root.id='assistant-panel';root.hidden=true;root.setAttribute('aria-label','Kaw, your planning assistant');document.body.append(root);
   const launcher=document.createElement('button');launcher.id='assistant-toggle';launcher.hidden=true;launcher.setAttribute('aria-label','Open assistant');launcher.setAttribute('aria-controls','assistant-panel');launcher.setAttribute('aria-expanded','false');
-  launcher.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-3 3V11.5A7.5 7.5 0 0 1 9.5 4h3A7.5 7.5 0 0 1 20 11.5Z"/><path d="M7 10h8M7 14h5"/></svg><span id="assistant-running" class="sr-only"></span>';
+  // The assistant is Kaw the crow, planIt's city planner.
+  launcher.innerHTML='<img class="kaw-avatar" src="/static/kaw/kaw-avatar.png" alt=""><span id="assistant-running" class="sr-only"></span>';
   document.body.append(launcher);
-  root.innerHTML=`<button id="close-assistant" class="ghost" aria-label="Close assistant">✕</button><section id="assistant-chat"><div id="assistant-messages" aria-live="polite"></div></section><section id="assistant-tasks" hidden><div class="row between"><strong>Evaluations</strong><button id="back-to-conversation" class="ghost small" aria-label="Back to conversation">←</button></div><div id="task-list"></div></section><div id="assistant-progress" role="status"></div><form id="assistant-form"><label class="sr-only" for="assistant-input">Message the assistant. Enter sends; Shift+Enter inserts a new line; Escape stops the current response. Commands: /clear for a new conversation; /tasks for evaluations.</label><textarea id="assistant-input" placeholder="Add an airport in northeast corner of the city" required maxlength="16000" rows="2"></textarea></form>`;
+  root.innerHTML=`<button id="close-assistant" class="ghost" aria-label="Close assistant">✕</button><section id="assistant-chat"><div id="assistant-messages" aria-live="polite"></div></section><section id="assistant-tasks" hidden><div class="row between"><strong>Evaluations</strong><button id="back-to-conversation" class="ghost small" aria-label="Back to conversation">←</button></div><div id="task-list"></div></section><div id="assistant-progress" role="status"></div><form id="assistant-form"><label class="sr-only" for="assistant-input">Message the assistant. Enter sends; Shift+Enter inserts a new line; Escape stops the current response. Commands: /clear for a new conversation; /tasks for evaluations.</label><textarea id="assistant-input" placeholder="Ask me anything..." required maxlength="16000" rows="1"></textarea><button type="submit" id="assistant-send" aria-label="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></form>`;
   const $=id=>document.getElementById(id),terminal=status=>['complete','failed','cancelled','interrupted'].includes(status);
   let user=null,cid=null,tasks=[],history=[],active=null,timer=null,busy=false,lastHistory='',seen=new Set(),tab='chat',generation=0,refreshing=false,initialized=false,errorMessage='',expanded=false,motion=null;
   function displayHistory(){
     const serialized=JSON.stringify(history);if(serialized===lastHistory)return;lastHistory=serialized;
     const el=$('assistant-messages'),nearBottom=el.scrollHeight-el.scrollTop-el.clientHeight<70;
-    el.innerHTML=history.length?history.map(m=>`<article class="assistant-message ${m.role==='user'?'from-user':'from-assistant'}"><div class="markdown">${renderMarkdown(m.text)}</div></article>`).join(''):'';
+    const hero='<div class="kaw-hero"><img src="/static/kaw/kaw-hero.png" alt="Kaw the crow"><h2>What shall we explore?</h2></div>';
+    el.innerHTML=hero+history.map(m=>m.role==='user'?`<article class="assistant-message from-user"><div class="markdown">${renderMarkdown(m.text)}</div></article>`:`<article class="assistant-message from-assistant"><img class="kaw-avatar" src="/static/kaw/kaw-avatar.png" alt="Kaw"><div class="markdown">${renderMarkdown(m.text)}</div></article>`).join('');
+    el.classList.toggle('has-history',history.length>0);
     if(nearBottom)el.scrollTop=el.scrollHeight;
   }
   function updateComposer(){
-    $('assistant-input').disabled=busy;
+    $('assistant-input').disabled=busy;$('assistant-send').disabled=busy;
   }
   function render(){
     active=tasks.find(t=>t.kind==='assistant'&&t.payload.conversation_id===cid&&!terminal(t.status));
