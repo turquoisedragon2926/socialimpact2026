@@ -139,6 +139,9 @@ def grid_for(geo, forward, reverse, cell_m):
                 # Keep only areas so every decision cell remains paintable.
                 geographic = unary_union([part for part in geographic.geoms
                                           if part.geom_type in ("Polygon", "MultiPolygon")])
+            if geographic.is_empty:
+                # A sliver along the edge can vanish when projected back; it has no area to paint.
+                continue
             result.append({"id": f"{row}:{col}", "area_ha": transform(forward, geographic).area/10000,
                            "geometry": mapping(geographic),
                            "center": list(transform(reverse, clipped.representative_point()).coords)[0]})
