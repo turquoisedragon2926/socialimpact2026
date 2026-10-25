@@ -72,7 +72,7 @@ Tile index = `row * cols + col`. Row 0 is the north edge and column 0 the west e
 ## Any city
 
 - The map is data only. Landmarks are drawn only when they fall inside the map, so they appear in San Francisco and nowhere else. Gulls pick shore tiles on any map.
-- New maps, when a backend answers `/api/health`. Freestyle asks "this map or a new map". A new map asks for the city, then a map radius (1 to 6 km from the centre, 4 km by default), builds it, and reloads with `?scene=<id>&play`. Challenge asks for the city first. Keeping this map's city goes straight to the cards. Another city goes through the radius step and reloads with `?scene=<id>&pick=challenge`, which opens the cards. The published artifact has no backend, so Freestyle starts at once and Challenge opens the cards.
+- New maps, when a backend answers `/api/health`. Freestyle opens a home page listing your saved maps (the server's scenes), with a New map card first. Picking a map opens it in Freestyle. A new map asks for the city, then a map radius (1 to 6 km from the centre, 4 km by default), builds it, and reloads with `?scene=<id>&play`. Challenge asks for the city first. Keeping this map's city goes straight to the cards. Another city goes through the radius step and reloads with `?scene=<id>&pick=challenge`, which opens the cards. The published artifact has no backend, so Freestyle starts at once and Challenge opens the cards.
 - Land cover comes from the backend's baseline. `tools/planit_terrain.py` adds terrain and buildings; its first run indexes the Overture release (about a minute, cached in `tools/.cache/`).
 
 ## Challenge stories
