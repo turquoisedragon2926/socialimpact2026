@@ -23,7 +23,6 @@ export function createTimeline({ el, game, audio, onEnd = () => {}, onClose = ()
     <div class="tl-track" aria-hidden="true"><i class="tl-fill"></i><b class="tl-knob"></b><div class="tl-ticks"></div></div>
     <div class="tl-foot">
       <button type="button" class="btn small tl-play">Pause</button>
-      <button type="button" class="btn small tl-reset" title="Back to today, and the map back to its starting view">Reset</button>
       <span class="tl-note">Rates of change are placeholders.</span>
     </div>`;
   const $ = (s) => el.querySelector(s);
@@ -72,16 +71,6 @@ export function createTimeline({ el, game, audio, onEnd = () => {}, onClose = ()
     audio?.play('click');
     if (playing) setPlaying(false);
     else { if (years >= TIMELINE.years) { years = 0; lastWhole = -1; } setPlaying(true); }
-  });
-  // Reset: back to the start year, stopped, with the map turned back to its starting view.
-  $('.tl-reset').addEventListener('click', () => {
-    audio?.play('click');
-    if (playing) setPlaying(false);
-    years = 0;
-    lastWhole = -1;
-    render();
-    $('.tl-play').textContent = 'Play';
-    game.resetView?.();
   });
   $('.tl-close').addEventListener('click', () => { audio?.play('click'); api.close(); });
 
