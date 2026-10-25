@@ -230,21 +230,23 @@ export async function connectBackend(game, data) {
 
   const note = document.querySelector('#legend .note');
   if (note) note.textContent = `Simulated ${TIMELINE.years} years after your plan with the team's land model (UNCCD / Trends.Earth rules). Illustrative, not a forecast.`;
-  addHudLinks(sceneId);
   const backend = { sceneId, scene, ids: data.ids, pull, get year() { return editYear + TIMELINE.years; } };
   game.backend = backend;   // for scripts and tests
+  const scienceBtn = addHudLinks();
+  if (scienceBtn) import('./science.js').then(({ addScience }) => { game.science = addScience(game, backend, scienceBtn); }).catch((err) => console.warn('Science view unavailable:', err));
   import('./kaw-chat.js').then(({ addKaw }) => addKaw(game, backend)).catch((err) => console.warn('Kaw unavailable:', err));
   return backend;
 }
 
-// Two buttons next to Land health: My maps, and 🔬 for this scene in the full
-// science view (Common Ground's layers, comparisons and analytics).
-function addHudLinks(sceneId) {
+// Two buttons next to Land health: My maps, and 🔬, which switches this map into
+// science mode in place (science.js). Returns the 🔬 button.
+function addHudLinks() {
   const tools = document.querySelector('nav.tools');
-  if (!tools || tools.querySelector('.science-link')) return;
+  if (!tools || tools.querySelector('.science-btn')) return null;
   tools.insertAdjacentHTML('afterbegin', `
     <a class="tool" href="./maps.html" title="All your maps"><span>My maps</span></a>
-    <a class="tool icon science-link" href="/#scene/${sceneId}" target="_blank" rel="noopener"
-       title="Open this map in the science view: every layer, comparisons and analytics"><span aria-hidden="true" style="font-size:19px">🔬</span></a>`);
+    <button type="button" class="tool icon science-btn" aria-pressed="false"
+       title="Science mode: every layer of the land model on this map"><span aria-hidden="true" style="font-size:19px">🔬</span></button>`);
   tools.querySelectorAll('a.tool').forEach((a) => { a.style.textDecoration = 'none'; a.style.color = 'var(--ink)'; });
+  return tools.querySelector('.science-btn');
 }
