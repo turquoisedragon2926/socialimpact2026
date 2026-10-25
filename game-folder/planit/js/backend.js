@@ -125,7 +125,9 @@ export function ensureSignedIn() {
 export async function connectBackend(game, data) {
   if (!data.ids || !(await ensureSignedIn())) return null;   // keep the mock model
 
-  const editYear = Math.max(data.baselineYear, new Date().getFullYear());
+  // New edits are dated this year, or after the latest saved edit (the backend
+  // only accepts edits at or after it, and Kaw may add later ones).
+  let editYear = Math.max(data.baselineYear, new Date().getFullYear());
   const index = new Map(data.ids.map((id, i) => [id, i]).filter(([id]) => id));
   let sceneId = new URLSearchParams(location.search).get('scene') ?? await findScene(data);
   let revision = 0;
@@ -136,6 +138,7 @@ export async function connectBackend(game, data) {
     revision = scene.revision;
     synced = new Map();
     for (const a of scene.actions) {
+      editYear = Math.max(editYear, a.year);
       const code = a.note?.startsWith(NOTE) ? Number(a.note.slice(NOTE.length)) : COVER_CODES[a.cover];
       for (const id of a.cell_ids) synced.set(id, code);
     }
@@ -195,27 +198,43 @@ export async function connectBackend(game, data) {
     return job.catch(() => null);
   }
 
-  // Restore the saved plan, then hand the model to the game.
-  const scene = await load();
-  const byCode = new Map();
-  for (const [id, code] of synced) {
-    const i = index.get(id);
-    if (i == null || !code) continue;
-    if (!byCode.has(code)) byCode.set(code, []);
-    byCode.get(code).push(i);
+  // Makes the tiles match the scene on the server: on load (restoring the saved
+  // plan) and after Kaw changes the scene. The model is paused meanwhile, since
+  // tiles swap in only after their construction puff and a sync before that
+  // would see the old map.
+  async function applyServerPlan() {
+    const { codes, original } = game.getMap();
+    const byCode = new Map();
+    for (const [id, i] of index) {
+      const want = synced.get(id) ?? original[i];
+      if (!want || codes[i] === want) continue;
+      if (!byCode.has(want)) byCode.set(want, []);
+      byCode.get(want).push(i);
+    }
+    game.setModel(null);
+    let painted = 0;
+    for (const [code, cells] of byCode) painted += game.paintCells(cells, code);
+    if (painted) await new Promise((resolve) => game.on('build', resolve));
+    game.setModel(model);
   }
-  game.setModel(null);
-  let painted = 0;
-  for (const [code, cells] of byCode) painted += game.paintCells(cells, code);
-  // Tiles swap in after their construction puff, so wait for that before the
-  // first sync; otherwise it would see the original map and reset the scene.
-  if (painted) await new Promise((resolve) => game.on('build', resolve));
-  game.setModel(model);
+
+  const scene = await load();
+  await applyServerPlan();
+
+  // Called when someone else (Kaw) changed the scene.
+  async function pull() {
+    const job = chain.then(async () => { await load(); await applyServerPlan(); });
+    chain = job.catch((err) => console.warn('planIt backend:', err));
+    return job;
+  }
 
   const note = document.querySelector('#legend .note');
   if (note) note.textContent = `Simulated ${TIMELINE.years} years after your plan with the team's land model (UNCCD / Trends.Earth rules). Illustrative, not a forecast.`;
   addHudLinks(sceneId);
-  return { sceneId, scene };
+  const backend = { sceneId, scene, ids: data.ids, pull, get year() { return editYear + TIMELINE.years; } };
+  game.backend = backend;   // for scripts and tests
+  import('./kaw-chat.js').then(({ addKaw }) => addKaw(game, backend)).catch((err) => console.warn('Kaw unavailable:', err));
+  return backend;
 }
 
 // Two buttons next to Land health: My maps, and 🔬 for this scene in the full

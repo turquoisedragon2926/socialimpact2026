@@ -51,7 +51,7 @@
   <!-- bottom tray -->
   <section class="tray panel" id="tray" aria-label="Land cover tray">
     <button type="button" class="tray-toggle" id="tray-toggle" aria-expanded="true" aria-controls="covers" title="Hide the tile tray">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span class="tt-label" id="tray-toggle-label">Hide tiles</span>
     </button>
     <div class="tray-status">
       <strong id="sel-count">0 tiles</strong>
@@ -62,7 +62,7 @@
     <button type="button" class="btn primary build" id="submit-btn" disabled>Submit plan</button>
   </section>
 
-  <div class="controls-hint">Click or drag to pick tiles &middot; Right-drag to rotate &middot; Shift + right-drag to pan &middot; Scroll to zoom</div>
+  <div class="controls-hint">Click or drag to pick tiles &middot; Right-drag to rotate &middot; Shift + right-drag to pan &middot; Scroll to zoom &middot; T hides the tiles</div>
   <div class="readout" id="readout" hidden></div>
   <aside class="timeline panel" id="timeline" hidden aria-label="Time-lapse"></aside>
 </div>

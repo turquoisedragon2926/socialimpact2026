@@ -105,11 +105,16 @@ function setTrayOpen(open, { remember = true } = {}) {
   tray.classList.toggle('collapsed', !open);
   $('tray-toggle').setAttribute('aria-expanded', String(open));
   $('tray-toggle').title = open ? 'Hide the tile tray' : 'Show the tile tray';
+  $('tray-toggle-label').textContent = open ? 'Hide tiles' : 'Show tiles';
   if (remember) try { localStorage.setItem('planit-tray', open ? '1' : '0'); } catch {}
 }
 let trayBeforeTimeline = true;
 try { setTrayOpen(localStorage.getItem('planit-tray') !== '0'); } catch { setTrayOpen(true); }
 $('tray-toggle').addEventListener('click', () => { audio.play('click'); setTrayOpen(tray.classList.contains('collapsed')); });
+window.addEventListener('keydown', (e) => {
+  if (e.key.toLowerCase() !== 't' || e.ctrlKey || e.metaKey || $('hud').hidden || e.target.closest?.('input, textarea')) return;
+  audio.play('click'); setTrayOpen(tray.classList.contains('collapsed'));
+});
 
 // Submit: the official confirmation of the plan. The time-lapse plays, and in
 // a challenge the result follows.

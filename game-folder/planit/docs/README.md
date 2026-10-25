@@ -19,9 +19,9 @@ URL shortcuts for testing:
 - **Change tiles:** pick a tile type in the tray, then click or drag on the map. Tiles change right away. Pick the same type again (or press Esc) to put the brush down.
 - **Or select first:** with no type picked, click or drag to select tiles, then pick a type and they all change. A drag that starts on a selected tile erases the selection instead.
 - **Submit plan:** the official confirmation. It plays the time-lapse, and in a challenge the result follows.
-- **Tray:** the small tab on top collapses it (remembered per browser). It also tucks away while the time-lapse panel is open.
+- **Tray:** the "Hide tiles" tab on top (or the T key) collapses it, remembered per browser. The tray stays clear of both bottom corners, and the controls hint sits under the wordmark. It also tucks away while the time-lapse panel is open.
 - **Camera:** right-drag rotates, Shift + right-drag (or middle-drag) pans, and the scroll wheel zooms. WASD also pans.
-- **Shortcuts:** Esc clears the selection and puts the brush down, Ctrl/Cmd+Z undoes, H toggles land health, and M mutes.
+- **Shortcuts:** Esc clears the selection and puts the brush down, Ctrl/Cmd+Z undoes, H toggles land health, T hides or shows the tiles, and M mutes.
 
 ## Files
 
