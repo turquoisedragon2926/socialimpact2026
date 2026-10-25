@@ -406,7 +406,7 @@ function updateView(){
   else $('legend').innerHTML=`<strong>${ndviView?'NDVI':'Soil carbon · tonnes C / ha'}</strong><div class="legend-gradient" style="background:linear-gradient(90deg,${ndviView?'#ece6c7,#336d48':'#eee4cc,#6a7552'})"></div><div class="legend-range"><span>${ndviView?'≤ −0.1':'0'}</span><span>${ndviView?'≥ 0.8':'120+'}</span></div><div style="margin-top:7px"><i class="swatch" style="background:${colors.unknown}"></i>No data</div>`;
   if(isSpatialView()){
     const spec=spatialFieldInfo(),variation=S.comparison.fieldMode==='stddev';
-    if(variation)$('legend').innerHTML=`<strong>${spec.label} · standard deviation</strong><div class="legend-gradient" style="background:linear-gradient(90deg,#f7f8f3,#80608d)"></div><div class="legend-range"><span>0</span><span>≥ ${fmt(spec.variationMax,spec.digits)}${spec.variationUnit}</span></div><div class="legend-missing"><i class="swatch" style="background:${colors.unknown}"></i>Fewer than two values</div>`;
+    if(variation)$('legend').innerHTML=`<strong>${spec.label}</strong><div class="legend-gradient" style="background:linear-gradient(90deg,#f7f8f3,#80608d)"></div><div class="legend-range"><span>0</span><span>≥ ${fmt(spec.variationMax,spec.digits)}${spec.variationUnit}</span></div><div class="legend-missing"><i class="swatch" style="background:${colors.unknown}"></i>Fewer than two values</div>`;
     else $('legend').querySelector('strong').prepend('Spatial mean · ');
   }
   for(const [id,layer] of S.cells){
