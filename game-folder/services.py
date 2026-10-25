@@ -213,7 +213,7 @@ class ScenarioService:
             time.sleep(max(0, 1.1 - (time.monotonic() - LAST_SEARCH)))
             LAST_SEARCH = time.monotonic()
             try:
-                r = httpx.get('https://nominatim.openstreetmap.org/search', params={'q': q, 'format': 'jsonv2', 'limit': 5}, timeout=20, headers={'User-Agent': 'CommonGroundHackathon/0.1 (local educational land-planning prototype)'})
+                r = httpx.get('https://nominatim.openstreetmap.org/search', params={'q': q, 'format': 'jsonv2', 'limit': 5, 'accept-language': 'en'}, timeout=20, headers={'User-Agent': 'CommonGroundHackathon/0.1 (local educational land-planning prototype)'})
                 r.raise_for_status()
                 result = [{'name': p['display_name'], 'lat': float(p['lat']), 'lon': float(p['lon'])} for p in r.json()]
             except Exception:
