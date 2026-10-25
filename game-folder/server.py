@@ -91,7 +91,8 @@ async def same_origin(request, call_next):
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    response.headers["X-Frame-Options"] = "DENY"
+    # SAMEORIGIN, not DENY: planIt (/planit/) shows this map in a frame on the same server.
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
     if request.url.path.startswith("/api/"):
         response.headers["Cache-Control"] = "no-store"
     return response

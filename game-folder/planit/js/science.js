@@ -49,6 +49,10 @@ export function addScience(game, backend, button) {
   panel.hidden = true;
   panel.innerHTML = `
     <span class="eyebrow">Science view · <span data-year></span></span>
+    <div class="science-dims" role="group" aria-label="Map style">
+      <button type="button" aria-pressed="true">3D city</button>
+      <button type="button" data-flat aria-pressed="false" title="The team's flat 2D science map of this plan">Flat 2D map</button>
+    </div>
     <div class="science-layers" role="group" aria-label="Map layers">
       ${LAYERS.map((l) => `<button type="button" data-layer="${l.id}" aria-pressed="false">${l.name}</button>`).join('')}
     </div>
@@ -56,9 +60,40 @@ export function addScience(game, backend, button) {
     <dl class="science-stats" data-stats></dl>
     <div class="science-cell" data-cell><span class="note">Point at a tile for its numbers.</span></div>
     <p class="note">Simulated with the team's land model (Trends.Earth / UNCCD rules). Illustrative, not a forecast.
-      <a href="/#scene/${backend.sceneId}" target="_blank" rel="noopener">Compare plans in the 2D view ↗</a></p>`;
+      <a href="/#scene/${backend.sceneId}" target="_blank" rel="noopener">Open the 2D map in a new tab ↗</a></p>`;
   document.getElementById('hud').appendChild(panel);
   const $ = (sel) => panel.querySelector(sel);
+
+  // Flat 2D map: Common Ground's own science map of this scene, on the same page.
+  // It shares the sign-in cookie, so edits made there land in the same plan and
+  // are pulled into the 3D city on the way back.
+  const flat = document.createElement('div');
+  flat.className = 'flat2d';
+  flat.hidden = true;
+  flat.innerHTML = `<iframe title="Flat 2D science map"></iframe>
+    <button type="button" class="btn primary flat2d-back">&larr; Back to the 3D city</button>`;
+  document.body.appendChild(flat);
+  const frame = flat.querySelector('iframe');
+  frame.addEventListener('load', () => {
+    // Inside planIt the 2D map's own "back to projects" arrow would leave this plan.
+    try {
+      const style = frame.contentDocument.createElement('style');
+      style.textContent = '.design-back{display:none!important}';
+      frame.contentDocument.head.appendChild(style);
+    } catch { /* not same-origin: leave it as is */ }
+  });
+  function showFlat(next) {
+    flat.hidden = !next;
+    game.setPaused(next);
+    game.setActive(!next);
+    if (next) frame.src = `/#scene/${backend.sceneId}`;
+    else {
+      frame.src = 'about:blank';
+      backend.pull().then(() => { if (on) refresh(); });
+    }
+  }
+  $('[data-flat]').addEventListener('click', () => showFlat(true));
+  flat.querySelector('.flat2d-back').addEventListener('click', () => showFlat(false));
 
   let on = false;
   let layer = 'degradation';
@@ -149,5 +184,5 @@ export function addScience(game, backend, button) {
 
   panel.querySelectorAll('[data-layer]').forEach((b) => b.addEventListener('click', () => { layer = b.dataset.layer; render(); }));
   button.addEventListener('click', () => set(!on));
-  return { get on() { return on; }, set, get layer() { return layer; }, setLayer(l) { layer = l; if (on) render(); } };
+  return { get on() { return on; }, set, showFlat, get flat() { return !flat.hidden; }, get layer() { return layer; }, setLayer(l) { layer = l; if (on) render(); } };
 }
