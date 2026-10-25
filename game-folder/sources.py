@@ -9,6 +9,7 @@ from functools import lru_cache
 from datetime import datetime, timezone
 from pathlib import Path
 import xml.etree.ElementTree as ET
+from baseline_cache import BaselineCache, digest
 
 import httpx
 import numpy as np
@@ -27,14 +28,35 @@ def transform(fn, geometry):
 
 ROOT = Path(__file__).parent
 CACHE = Path(os.environ.get("LAND_RUNTIME", ROOT / "runtime")) / "source-cache"
+BASELINES = BaselineCache(CACHE.parent / "baseline-cache", ROOT / "data/baseline-cache.json")
+DEFAULT_CELL_M = 165
+AGGREGATION_VERSION = "native-cover-mean-ndvi-overlap-soil-v1"
 CLASS_MAP = {10: "trees", 20: "grass", 30: "grass", 40: "crops", 50: "built",
              60: "bare", 70: "bare", 80: "water", 90: "wetland", 95: "trees", 100: "grass"}
 ENV = dict(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", GDAL_HTTP_TIMEOUT="30", GDAL_HTTP_MAX_RETRY="1")
 SOIL_URL = "https://files.isric.org/soilgrids/latest/data/ocs/ocs_0-30cm_mean.vrt"
+COVER_TEMPLATE = "https://esa-worldcover.s3.eu-central-1.amazonaws.com/{version}/{year}/map/ESA_WorldCover_10m_{year}_{version}_{tile}_Map.tif"
+NDVI_TEMPLATE = "https://esa-worldcover-s2.s3.eu-central-1.amazonaws.com/ndvi/{year}/{latitude}/ESA_WorldCover_10m_{year}_{version}_{tile}_NDVI.tif"
 
 
-def digest(value):
-    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+def dataset_versions(year):
+    version = "v200" if year == 2021 else "v100"
+    return {
+        "cover": {"product": "ESA WorldCover", "version": version, "year": year,
+                  "url_template": COVER_TEMPLATE, "band": 1},
+        "ndvi": {"product": "WorldCover Sentinel-2 annual median NDVI", "version": version,
+                 "year": year, "url_template": NDVI_TEMPLATE, "band": 2},
+        "soil": {"product": "SoilGrids", "version": "2.0", "depth_cm": [0, 30],
+                 "statistic": "mean organic carbon stock", "url": SOIL_URL},
+    }
+
+
+def baseline_request(geo, year, cell_m, crs):
+    # Ring orientation, ring starting vertex, and polygon order are immaterial.
+    return {"geometry_sha256": hashlib.sha256(geo.normalize().wkb).hexdigest(),
+            "year": year, "cell_m": float(cell_m), "crs": crs,
+            "datasets": dataset_versions(year), "aggregation": AGGREGATION_VERSION,
+            "class_map": {str(k): v for k, v in CLASS_MAP.items()}}
 
 
 def write_atomic(path, content):
@@ -78,24 +100,28 @@ def validate_bounds(bounds):
 
 
 def region_geometry(lat, lon, place, bounds=None):
-    if bounds is None and place == "sf":
-        lat, lon = 37.77, -122.44
     if bounds is not None:
         validate_bounds(bounds)
-        lon, lat = (bounds[0]+bounds[2])/2, (bounds[1]+bounds[3])/2
-    crs = f"EPSG:{(32600 if lat >= 0 else 32700) + min(60, int((lon+180)//6)+1)}"
-    forward = Transformer.from_crs(4326, crs, always_xy=True).transform
-    reverse = Transformer.from_crs(crs, 4326, always_xy=True).transform
-    if bounds is not None:
         geo = box(*bounds)
     elif place == "ggp":
         geo = ggp_geometry()
     elif place == "sf":
         geo = sf_geometry()
     else:
+        crs = region_crs(lat, lon)
+        forward = Transformer.from_crs(4326, crs, always_xy=True).transform
+        reverse = Transformer.from_crs(crs, 4326, always_xy=True).transform
         x, y = forward(lon, lat)
         geo = transform(reverse, box(x-1000, y-1000, x+1000, y+1000))
+    west, south, east, north = geo.bounds
+    crs = region_crs((south+north)/2, (west+east)/2)
+    forward = Transformer.from_crs(4326, crs, always_xy=True).transform
+    reverse = Transformer.from_crs(crs, 4326, always_xy=True).transform
     return geo, crs, forward, reverse
+
+
+def region_crs(lat, lon):
+    return f"EPSG:{(32600 if lat >= 0 else 32700) + min(60, int((lon+180)//6)+1)}"
 
 
 def grid_for(geo, forward, reverse, cell_m):
@@ -119,11 +145,11 @@ def grid_for(geo, forward, reverse, cell_m):
     return result
 
 
-def raster_patch(url, bounds, band=1):
+def raster_patch(url, bounds, band=1, *, refresh=False):
     CACHE.mkdir(parents=True, exist_ok=True)
     key = digest([url, list(bounds), band])
     target = CACHE / f"{key}.tif"
-    if not target.exists():
+    if refresh or not target.exists():
         with rasterio.Env(**ENV), rasterio.open(url) as src:
             projected = rasterio.warp.transform_bounds(4326, src.crs, *bounds, densify_pts=21)
             win = from_bounds(*projected, src.transform)
@@ -147,12 +173,12 @@ def raster_patch(url, bounds, band=1):
                 "source": url, "sha256": hashlib.sha256(target.read_bytes()).hexdigest()}
 
 
-def soil_patch(bounds):
+def soil_patch(bounds, *, refresh=False):
     # Narrow the global VRT before opening: otherwise GDAL can inspect thousands
     # of remote source rasters to determine their properties.
     CACHE.mkdir(parents=True, exist_ok=True)
-    master = CACHE / "soilgrids-ocs.vrt"
-    if not master.exists():
+    master = CACHE / f"soilgrids-{digest(dataset_versions(2021)['soil'])}.vrt"
+    if refresh or not master.exists():
         r = httpx.get(SOIL_URL, timeout=45, follow_redirects=True)
         r.raise_for_status()
         write_atomic(master, r.content)
@@ -174,9 +200,9 @@ def soil_patch(bounds):
             source = element.find("SourceFilename")
             source.text = "/vsicurl/" + SOIL_URL.rsplit("/", 1)[0] + "/" + source.text
             source.set("relativeToVRT", "0")
-    path = CACHE / f"soil-{digest(bounds)}.vrt"
+    path = CACHE / f"soil-{digest([hashlib.sha256(master.read_bytes()).hexdigest(), list(bounds)])}.vrt"
     write_atomic(path, ET.tostring(root))
-    patch = raster_patch(str(path), bounds)
+    patch = raster_patch(str(path), bounds, refresh=refresh)
     patch["source"] = SOIL_URL
     return patch
 
@@ -185,20 +211,17 @@ def tile_name(lat, lon):
     return f"{'N' if lat >= 0 else 'S'}{abs(lat):02d}{'E' if lon >= 0 else 'W'}{abs(lon):03d}"
 
 
-def satellite_patches(bounds, year, kind):
+def satellite_patches(bounds, year, kind, *, refresh=False):
     west, south, east, north = bounds
     step = 3 if kind == "cover" else 1
-    version = "v200" if year == 2021 else "v100"
+    spec = dataset_versions(year)[kind]
     patches = []
     for lat in range(math.floor(south/step)*step, math.ceil(north/step)*step, step):
         for lon in range(math.floor(west/step)*step, math.ceil(east/step)*step, step):
             tile = tile_name(lat, lon)
-            if kind == "cover":
-                url = f"https://esa-worldcover.s3.eu-central-1.amazonaws.com/{version}/{year}/map/ESA_WorldCover_10m_{year}_{version}_{tile}_Map.tif"
-            else:
-                url = f"https://esa-worldcover-s2.s3.eu-central-1.amazonaws.com/ndvi/{year}/{tile[:3]}/ESA_WorldCover_10m_{year}_{version}_{tile}_NDVI.tif"
+            url = spec['url_template'].format(version=spec['version'], year=year, tile=tile, latitude=tile[:3])
             clipped = [max(west, lon), max(south, lat), min(east, lon+step), min(north, lat+step)]
-            patches.append(raster_patch(url, clipped, 1 if kind == "cover" else 2))
+            patches.append(raster_patch(url, clipped, spec['band'], refresh=refresh))
     return patches
 
 
@@ -246,32 +269,45 @@ def soil_value(geometry, patch):
     return (weighted/valid if valid else None), min(1, valid/poly.area) if poly.area else 0
 
 
-def build_baseline(lat, lon, year, name, place=None, progress=lambda _: None, bounds=None):
+def build_baseline(lat, lon, year, name, place=None, progress=lambda _: None, bounds=None, *, refresh=False):
     if year not in (2020, 2021) or not (-60 <= lat <= 80 and -179 <= lon <= 179):
         raise ValueError("Choose 2020 or 2021 and a location between 60°S and 80°N.")
-    packaged = ROOT / "data" / f"{place}-{year}.json"
     selected_bounds = bounds
     if bounds is not None:
         validate_bounds(bounds)
         place = None
-    if place in ("ggp", "sf") and packaged.exists():
-        return json.loads(packaged.read_text())
     geo, crs, forward, reverse = region_geometry(lat, lon, place, bounds)
     if geo.bounds[2]-geo.bounds[0] > 1:
         raise ValueError("This region crosses an unsupported longitude boundary.")
-    cell_m = 165 if place == "sf" else 145
-    if place == "ggp":
-        # Count clipped boundary cells too, choosing a reproducible grid near 200.
-        candidates = [(abs(len(grid_for(geo, forward, reverse, m))-200), m) for m in range(145, 181, 5)]
-        cell_m = min(candidates)[1]
+    cell_m = DEFAULT_CELL_M
+    request = baseline_request(geo, year, cell_m, crs)
+    progress("Checking saved source data for this region…")
+    with BASELINES.lock(request):
+        cached = None if refresh else BASELINES.get(request)
+        if cached is not None:
+            progress("Loaded matching source data…")
+            return {**cached, "name": name}
+        boundary_source = ("User-selected map rectangle" if selected_bounds is not None else
+                           "https://data.sf.gov/d/j2bu-swwd (union of 41 analysis neighborhoods)" if place == "sf" else
+                           "https://data.sf.gov/d/gtr9-ntp6" if place == "ggp" else
+                           "2 km square centered on selected coordinates")
+        baseline = retrieve_baseline(geo, crs, forward, reverse, year, cell_m, boundary_source, progress, refresh)
+        # Missing coverage is valid data. A source outage is not a reusable result.
+        if not baseline['warnings']:
+            BASELINES.put(request, baseline)
+        return {**baseline, "name": name}
+
+
+def retrieve_baseline(geo, crs, forward, reverse, year, cell_m, boundary_source, progress, refresh=False):
+    geo = geo.normalize()
     cells = grid_for(geo, forward, reverse, cell_m)
     bounds = geo.bounds
     progress("Reading satellite land cover, vegetation and soil-carbon data…")
     failures = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
-        jobs = {"cover": pool.submit(satellite_patches, bounds, year, "cover"),
-                "ndvi": pool.submit(satellite_patches, bounds, year, "ndvi"),
-                "soil": pool.submit(soil_patch, bounds)}
+        jobs = {"cover": pool.submit(satellite_patches, bounds, year, "cover", refresh=refresh),
+                "ndvi": pool.submit(satellite_patches, bounds, year, "ndvi", refresh=refresh),
+                "soil": pool.submit(soil_patch, bounds, refresh=refresh)}
         data = {}
         for key, job in jobs.items():
             try:
@@ -309,12 +345,15 @@ def build_baseline(lat, lon, year, name, place=None, progress=lambda _: None, bo
                dict(name="SoilGrids 2.0 · top 30 cm", year=None, resolution_m=250, license="CC BY 4.0",
                     url="https://isric.org/explore/soilgrids", kind="Statistical soil estimate; not a dated observation",
                     files=[{"url": SOIL_URL, "crop_sha256": data["soil"]["sha256"]}] if data["soil"] else [])]
-    baseline = dict(name=name, year=year, cell_m=cell_m, crs=crs, geometry=mapping(geo), bounds=list(bounds),
+    baseline = dict(year=year, cell_m=cell_m, crs=crs, geometry=mapping(geo), bounds=list(bounds),
                     cells=cells, sources=sources, retrieved_at=datetime.now(timezone.utc).isoformat(), warnings=failures,
-                    boundary_source="User-selected map rectangle" if selected_bounds is not None else "https://data.sf.gov/d/j2bu-swwd (union of 41 analysis neighborhoods)" if place == "sf" else "https://data.sf.gov/d/gtr9-ntp6" if place == "ggp" else "2 km square centered on selected coordinates",
+                    boundary_source=boundary_source,
+                    request=baseline_request(geo, year, cell_m, crs),
                     aggregation="Land cover: native-pixel center fractions. NDVI: spatial mean of valid annual medians. Soil: overlap-area weighted 250 m estimates. Boundary cells clipped to region.")
     if not any(c["fractions"] for c in cells):
         raise ValueError("No land-cover observations were found for this selection. Choose a different location.")
+    # Match the JSON types returned on subsequent cache reads (coordinates are lists).
+    baseline = json.loads(json.dumps(baseline, allow_nan=False))
     baseline["id"] = digest({k: v for k, v in baseline.items() if k not in ("retrieved_at", "name")})
     return baseline
 
@@ -323,8 +362,11 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--year", type=int, default=2021)
+    parser.add_argument("--place", choices=("ggp", "sf"), default="ggp")
+    parser.add_argument("--refresh", action="store_true", help="Bypass baseline and raster caches; fetch current source files")
     args = parser.parse_args()
-    result = build_baseline(37.7694, -122.4862, args.year, "Golden Gate Park", "ggp", print)
-    (ROOT / "data" / f"ggp-{args.year}.json").write_text(json.dumps(result, separators=(",", ":")))
+    name = "San Francisco" if args.place == "sf" else "Golden Gate Park"
+    result = build_baseline(37.7694, -122.4862, args.year, name, args.place, print, refresh=args.refresh)
+    print("Baseline snapshot:", result['id'])
     print(json.dumps({"cells": len(result["cells"]), "cell_m": result["cell_m"],
                       "warnings": result["warnings"], "soc_cells": sum(c["soc"] is not None for c in result["cells"])}))

@@ -3,10 +3,13 @@
   "checks": [
     "current model and input hashes match evidence",
     "all eight report scenarios render",
-    "all saved live results equal audit",
-    "focused live restoration is green",
+    "unedited saved results equal audit; edited scenes equal current model",
+    "focused live restoration displays numeric productivity",
     "focus and layer survive reload",
     "report mobile layout"
   ],
-  "javascript_errors": []
+  "javascript_errors": [],
+  "saved_scenarios_modified_since_seeding": [
+    "grass"
+  ]
 }

@@ -1,5 +1,29 @@
 """Scenario differences against an unchanged landscape at the same year."""
 from collections import Counter
+from statistics import mean, pstdev
+import math
+
+
+def distribution(scenarios):
+    """Equal weight per alternative; missing values never become zero.
+
+    Within-design means are area weighted by model.evaluate. Between-design
+    spread is descriptive, not a confidence interval or a combined land total.
+    """
+    keys = ('carbon_tonnes', 'carbon_mean_t_ha', 'carbon_change_pct', 'simulated_ndvi',
+            'degrading_ha', 'degradation_assessed_ha', 'known_carbon_ha',
+            'productivity_slope', 'productivity_state_class_change', 'productivity_performance_ratio')
+    output = {}
+    for key in keys:
+        points = [{'id': s['id'], 'name': s['name'], 'value': s['metrics'][key]}
+                  for s in scenarios if s['metrics'].get(key) is not None
+                  and math.isfinite(s['metrics'][key])]
+        values = [p['value'] for p in points]
+        output[key] = {'points': points, 'n': len(values), 'missing': len(scenarios)-len(values),
+                       'mean': mean(values) if values else None,
+                       'min': min(values) if values else None, 'max': max(values) if values else None,
+                       'stddev': pstdev(values) if values else None}
+    return output
 
 
 def differences(reference, scenario, baseline):

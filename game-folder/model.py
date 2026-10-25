@@ -34,7 +34,8 @@ def coefficient(before, after, climate):
     return rows[before][list(COVERS).index(after)]
 
 
-def evaluate(baseline, actions, year, climate="temperate_dry", ndvi_model_version=ndvi.VERSION):
+def evaluate(baseline, actions, year, climate="temperate_dry", ndvi_model_version=ndvi.VERSION, checkpoint=lambda: None):
+    checkpoint()
     ndvi_metadata = ndvi.metadata(ndvi_model_version)
     if climate not in CLIMATES:
         raise ValueError("Choose a supported climate assumption.")
@@ -47,13 +48,16 @@ def evaluate(baseline, actions, year, climate="temperate_dry", ndvi_model_versio
             for cell_id in action["cell_ids"]:
                 by_cell[cell_id].append(action)
     output = []
-    productivity_cells = productivity.evaluate(baseline, actions, year, ndvi_model_version)
+    productivity_cells = productivity.evaluate(baseline, actions, year, ndvi_model_version, checkpoint)
     degradation_areas = dict.fromkeys(degradation.STATES, 0.)
     area_by_cover = defaultdict(float)
     classification = defaultdict(float)
     stock_total = stock_initial = known_area = changed_area = ndvi_sum = ndvi_area = 0.
     scenario_ndvi_sum = scenario_ndvi_area = scenario_ndvi_baseline_sum = 0.
+    productivity_sums = dict.fromkeys(('slope', 'state_class_change', 'performance_ratio'), 0.)
+    productivity_areas = dict.fromkeys(productivity_sums, 0.)
     for cell, prod in zip(baseline["cells"], productivity_cells):
+        checkpoint()
         initial = cell.get("soc")
         stock = initial
         fractions = dict(cell["fractions"])
@@ -88,6 +92,11 @@ def evaluate(baseline, actions, year, climate="temperate_dry", ndvi_model_versio
         stock = at(year)
         vegetation = ndvi.evaluate_cell(cell, annual_actions, year)
         ha = cell["area_ha"]
+        for key in productivity_sums:
+            if prod[key] is not None:
+                valid_area = ha*cell.get('coverage', {}).get('ndvi', 1)
+                productivity_sums[key] += prod[key]*valid_area
+                productivity_areas[key] += valid_area
         delta_pct = (stock/initial-1)*100 if initial is not None and initial > 0 and stock is not None else None
         status = "unknown" if delta_pct is None else "declining" if delta_pct <= -10+1e-8 else "improving" if delta_pct >= 10-1e-8 else "stable"
         covered_ha = ha*cell.get("coverage", {}).get("soc", 1) if initial is not None and stock is not None else 0
@@ -129,6 +138,10 @@ def evaluate(baseline, actions, year, climate="temperate_dry", ndvi_model_versio
             "ndvi_model": ndvi_metadata, "method_reference": REFERENCE, "climate": climate, "cells": output,
             "degradation_model": {**degradation.metadata(), "productivity": productivity.metadata(start)},
             "metrics": {"area_ha": total_area, "known_carbon_ha": known_area,
+                        **{f'productivity_{key}': productivity_sums[key]/productivity_areas[key]
+                           if productivity_areas[key] else None for key in productivity_sums},
+                        "productivity_coverage_ha": productivity_areas,
+                        "carbon_change_pct": (stock_total/stock_initial-1)*100 if stock_initial > 0 else None,
                         "carbon_tonnes": stock_total if known_area else None,
                         "carbon_baseline_tonnes": stock_initial if known_area else None,
                         "carbon_change_tonnes": stock_total-stock_initial if known_area else None,

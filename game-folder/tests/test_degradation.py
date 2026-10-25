@@ -17,6 +17,27 @@ def edit(cover, year=2021):
     return {'cell_ids':['a'],'cover':cover,'year':year}
 
 
+def test_numeric_summary_uses_valid_area_and_preserves_unknowns():
+    b = baseline()
+    second = copy.deepcopy(b['cells'][0])
+    second.update(id='b', area_ha=6., ndvi=.3, soc=100.)
+    second['coverage']['ndvi'] = .5
+    b['cells'].append(second)
+    early = evaluate(b, [edit('built')], 2021)['metrics']
+    assert early['productivity_slope'] is None
+    assert early['productivity_state_class_change'] is None
+    assert early['productivity_coverage_ha']['slope'] == 0
+    result = evaluate(b, [edit('built')], 2033)
+    for key in ('slope', 'state_class_change', 'performance_ratio'):
+        a, z = [c['degradation']['productivity'][key] for c in result['cells']]
+        assert result['metrics'][f'productivity_{key}'] == pytest.approx((a*2+z*3)/5)
+        assert result['metrics']['productivity_coverage_ha'][key] == 5
+    m = result['metrics']
+    assert m['carbon_change_pct'] == pytest.approx(m['carbon_change_tonnes']/700*100)
+    water = evaluate(baseline('water'), [], 2033)['metrics']
+    assert water['productivity_performance_ratio'] is None
+
+
 @pytest.mark.parametrize('states', list(itertools.product(d.STATES, repeat=3)))
 def test_1oao_including_unknown(states):
     expected = ('declining' if 'declining' in states else 'unknown' if 'unknown' in states

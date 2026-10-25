@@ -13,9 +13,9 @@ uv run uvicorn server:app --host 127.0.0.1 --port 8780
 
 Open http://127.0.0.1:8780. The direct command works without macOS's `run.command` launcher. Python and dependencies are managed by uv; the project requires Python 3.11 or newer. No API keys are needed. Email entry selects a demo workspace, not a verified identity; keep this server local.
 
-The repository includes the small, real Golden Gate Park 2020/2021 and San Francisco 2021 baselines, their boundaries, neighborhood outlines, model parameters, and source metadata. Choose **All San Francisco** with 2021 to use a bundled baseline. A new clone starts with no accounts or saved projects; `runtime/land.db` is created on first run.
+The repository includes the small, real Golden Gate Park 2020/2021 and San Francisco 2021 baselines, their boundaries, neighborhood outlines, model parameters, and source metadata. Choose **All San Francisco** with 2021 to match a bundled cache seed. Every location uses the same request-keyed cache; presets only select boundaries. A new clone starts with no accounts or saved projects; `runtime/land.db` is created on first run.
 
-Custom rectangles and other uncached regions download public raster windows on demand through `sources.py`: ESA WorldCover, its Sentinel-2 NDVI composite, and ISRIC SoilGrids. Internet is also used for map tiles, fonts, and place search. Missing soil/NDVI data stays unknown; a land-cover download failure may require retrying. Cached source crops are stored in `runtime/source-cache/` and are recreated as needed. Dataset dates, resolutions, attribution and modeling limits are in [the app README](game-folder/README.md#real-data).
+Custom rectangles and other uncached regions use a 165 m decision grid and download public raster windows on demand through `sources.py`: ESA WorldCover, its Sentinel-2 NDVI composite, and ISRIC SoilGrids. Internet is also used for map tiles, fonts, and place search. Missing soil/NDVI data stays unknown; a land-cover download failure may require retrying. Source crops are stored in `runtime/source-cache/`; finished baselines are stored in `runtime/baseline-cache/`. A cache key includes geometry, year, resolution, projection, source configuration and aggregation version. Both caches are recreated as needed; source outages are not retained as reusable baselines. Dataset dates, resolutions, attribution and modeling limits are in [the app README](game-folder/README.md#real-data).
 
 To check the bundled app from `game-folder/`:
 
@@ -23,19 +23,16 @@ To check the bundled app from `game-folder/`:
 uv run pytest -q
 ```
 
-If a bundled park snapshot was removed, `uv run python sources.py --year 2021` (or `2020`) rebuilds it from public sources, using the included park boundary. An existing snapshot is reused. To rebuild a missing city snapshot, run from `game-folder/`:
+Missing seed files are ordinary cache misses: scene creation retrieves the real sources and saves a runtime baseline. To warm or refresh a preset explicitly, run from `game-folder/`:
 
 ```sh
-uv run python - <<'PY'
-import json
-from pathlib import Path
-from sources import build_baseline
-data = build_baseline(37.77, -122.44, 2021, 'San Francisco', 'sf', print)
-Path('data/sf-2021.json').write_text(json.dumps(data, separators=(',', ':')))
-PY
+uv run python sources.py --place ggp --year 2021
+uv run python sources.py --place sf --year 2021 --refresh
 ```
 
-These commands regenerate data only when the matching snapshot is absent. Restoring an accidentally deleted tracked file with `git restore -- game-folder/data/sf-2021.json` from the repository root preserves the exact published snapshot. New downloads can differ in coverage or metadata.
+The first command uses a matching cached baseline if available. `--refresh` bypasses both baseline and raw-raster caches, including bundled seeds, and saves a fresh runtime baseline after successful retrieval. It never replaces existing scenes or tracked seed files. SoilGrids' `latest` URL may change; an explicit refresh can therefore produce a different snapshot.
+
+To restore an accidentally deleted tracked snapshot exactly, run `git restore -- game-folder/data/sf-2021.json` from the repository root. The static seed index `game-folder/data/baseline-cache.json` verifies each bundled file's checksum. New downloads may differ from these historical snapshots in coverage or metadata. No database reset is needed when refreshing data.
 
 ## Optional GIS playground
 

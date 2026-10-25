@@ -20,13 +20,13 @@ Accounts, sessions and scenes live in `runtime/land.db`. Baselines are immutable
 
 1. Search or pan to a place. Move the region using its center handle, resize its corners, or use **Select here**. Choose a 2020 or 2021 baseline and create the scene. Climate and exact bounds are under settings.
 2. Choose a land-cover icon from the floating top toolbar, then click or drag to paint immediately. Each stroke saves as one dated intervention; click the active brush again to stop painting. The editor has no secondary scene action bar.
-3. Play the floating clock (one simulated year per step, roughly one second apart) to see the estimated carbon and vegetation response. The clock pulses while running; pause freezes time. Switch between land cover, simulated NDVI, carbon stock, carbon-change categories and simulated land degradation. Hover retains the observed NDVI reference.
+3. Play the floating clock (one simulated year per step, roughly one second apart) to see the estimated carbon and vegetation response. The clock pulses while running; pause freezes time. Switch between land cover, simulated NDVI, carbon stock, carbon-change percentage, productivity trend, productivity state and productivity performance. Hover retains the observed NDVI reference.
 4. Reset returns to the original land cover and baseline year. Use Cmd/Ctrl+Z to undo a stroke or reset.
-5. Use **＋ Alternative** on a project card to name a copy, optionally starting from the original cover. Select compatible cards and compare them at the same year. The comparison shows degradation maps, NDVI/carbon differences and unknown area, with an unchanged same-year reference and JSON export. Open a map from comparison to inspect the same year and edited area.
+5. Select compatible project cards and compare them at the same year. Use the left/right arrows to rotate designs and the unchanged reference on one map. Position, layer and year remain fixed. The top-left summary shows the current value, mean and range between designs; expand it for degradation, coverage and reference differences. Export retains the computed results. Opening a design at the comparison year does not advance its saved clock.
 
-Hover a cell for its cover, observed and simulated NDVI, modeled carbon and data coverage. Clicking with no brush active does nothing. Keyboard users can focus cells for details and press Enter/Space to paint with an active brush; Escape deselects the brush. Cmd/Ctrl+Z removes the latest stroke. Pending strokes save sequentially; rejected changes restore the saved state. Edits are chronological; undo later edits before changing the past.
+Hover a cell for its cover, observed and simulated NDVI, modeled carbon and data coverage. Clicking with no brush active selects the cell for the assistant without changing land cover. Keyboard users can focus cells for details and press Enter/Space to paint with an active brush; Escape deselects the brush. Cmd/Ctrl+Z removes the latest stroke. Pending strokes save sequentially; rejected changes restore the saved state. Edits are chronological; undo later edits before changing the past.
 
-The clock pauses when painting, leaving the scene or hiding the tab; it never catches up with wall time. Reset clears edits and returns to the baseline year. Undo can restore the scenario immediately preceding a reset, including after reload. The clock floats at bottom left with a graph of the selected metric through the current simulation year. The graph uses annual model results and pulses only during playback. Zoom changes the view without changing decision-cell resolution. Editor dragging pans when no brush is selected and paints when a brush is active. The clickable layer tiles keep land cover, simulated NDVI, carbon stock, soil-carbon change and simulated land degradation available without an analysis sidebar. Carbon-change colors follow the supplied reference: green improving, pale yellow stable, purple declining; unknown remains gray. The carbon-only layer remains available alongside a separate simulated land-degradation layer combining productivity, land-cover transitions and carbon.
+The clock pauses when painting, leaving the scene or hiding the tab; it never catches up with wall time. Reset clears edits and returns to the baseline year. Undo can restore the scenario immediately preceding a reset, including after reload. The clock floats at bottom left with a graph of the selected metric through the current simulation year. The graph uses annual model results and pulses only during playback. Zoom changes the view without changing decision-cell resolution. Editor dragging pans when no brush is selected and paints when a brush is active. The map tiles expose numeric assessment values without an analysis sidebar. Carbon percentage change, NDVI trend slope, percentile-rank change and performance ratio use purple–cream–green gradients. Fixed display ranges preserve comparisons across years and scenes; end colors saturate, while hover retains exact values. Unknown remains gray. These display ranges are not classification thresholds. Categorical assessment remains in the API and comparison summaries.
 
 ## Real data
 
@@ -40,13 +40,13 @@ The UI uses the seven reporting category names documented by Trends.Earth: Fores
 | DataSF parks | Union of the seven Golden Gate Park section boundaries |
 | OpenStreetMap | Context map and explicit, rate-limited Nominatim place searches |
 
-Golden Gate Park snapshots for both years remain bundled in `data/` for existing scenes and the API preset. The map selector fetches data for the exact selected rectangle, including when centered on the park. The section boundaries give **199 clipped cells at 165 m**, covering approximately **417.1 ha**. Counting partial edge cells explains the difference from the earlier 145 m area-only estimate. Two thin boundary pieces have no satellite pixel centers and remain unknown.
+Golden Gate Park snapshots for both years are optional, checksum-verified cache seeds indexed in `data/baseline-cache.json`. Presets resolve boundaries; all locations then use the same baseline cache and retrieval pipeline. A rectangle inside the park is a different geometry and gets its own baseline. The section boundaries give **199 clipped cells at 165 m**, covering approximately **417.1 ha**. Counting partial edge cells explains the difference from the earlier 145 m area-only estimate. Two thin boundary pieces have no satellite pixel centers and remain unknown.
 
-**San Francisco city-wide:** choose **All San Francisco** on the region selector, or search for San Francisco. The footprint is the union of all 41 [DataSF analysis neighborhoods](https://data.sf.gov/d/j2bu-swwd), including Treasure Island; it is not the offshore county jurisdiction. Its source snapshot is stored in `data/sf-boundary.geojson` with retrieval metadata and source hash. The bundled 2021 scene has 4,781 cells covering about 122 km², with soil estimates covering about 7% of that area. City scenes use 165 m cells; `data/sf-2021.json` caches the real 2021 raster baseline. Existing park scenes remain separate.
+**San Francisco city-wide:** choose **All San Francisco** on the region selector, or search for San Francisco. The footprint is the union of all 41 [DataSF analysis neighborhoods](https://data.sf.gov/d/j2bu-swwd), including Treasure Island; it is not the offshore county jurisdiction. Its source snapshot is stored in `data/sf-boundary.geojson` with retrieval metadata and source hash. The bundled 2021 scene has 4,781 cells covering about 122 km², with soil estimates covering about 7% of that area. All new scenes use 165 m cells; `data/sf-2021.json` seeds the generic cache for this exact geometry, year, grid and source configuration. Existing park scenes remain separate.
 
 SoilGrids covers about **123.1 ha (30%)** of this urban site. Carbon totals and classification areas use only valid overlap area; partial cells do not count as fully covered. Missing values are never filled with fabricated measurements. A cell color represents the status of its known portion; inspect it for coverage.
 
-The map supports wheel/trackpad, pinch and +/− zoom, panning, place search, draggable region handles and exact bounds in settings. Selected rectangles use 145 m cells and fetch public raster windows on demand. The demo accepts 1–25,000 ha, with sides up to 25 km; legacy API requests without bounds still use a 2 km square. New requests need internet and may take a minute; source failures preserve explicit unknowns or a retryable land-cover error. Coordinates are supported between 60°S and 80°N, excluding dateline-crossing scenes. The basemap and fonts also use internet; the saved cell layer does not require them.
+The map supports wheel/trackpad, pinch and +/− zoom, panning, place search, draggable region handles and exact bounds in settings. Selected rectangles use the same 165 m cells and fetch public raster windows on a cache miss. Existing saved scenes keep their original grid and data. The demo accepts 1–25,000 ha, with sides up to 25 km; legacy API requests without bounds still use a 2 km square. New requests need internet and may take a minute; source failures preserve explicit unknowns or a retryable land-cover error. Coordinates are supported between 60°S and 80°N, excluding dateline-crossing scenes. The basemap and fonts also use internet; the saved cell layer does not require them.
 
 Sources and attribution: [ESA access and CC BY 4.0 terms](https://esa-worldcover.org/en/data-access), [VITO composites](https://remotesensing.vito.be/news/simplify-your-processing-worldcover-annual-composites), [SoilGrids](https://isric.org/explore/soilgrids), [DataSF](https://data.sf.gov/d/gtr9-ntp6), [OpenStreetMap](https://www.openstreetmap.org/copyright). © ESA WorldCover project 2020/2021 / Contains modified Copernicus Sentinel data processed by ESA WorldCover consortium. SoilGrids: ISRIC — World Soil Information, CC BY 4.0. Leaflet's license is retained in `static/vendor/leaflet-LICENSE`.
 
@@ -101,13 +101,13 @@ Scene means weight each cell by `area_ha * valid_ndvi_fraction`, independently o
 
 On startup, existing scenes receive the NDVI version without replacing their baseline or edits. New scenes and clones retain that version; evaluation/export include parameters and their SHA-256. Treat versioned parameter files as immutable: changing assumptions requires a new supported model version. Hover separates observed and simulated values; Sources & model assumptions lists the coefficients and limitations.
 
-Comparisons require the same immutable baseline, climate, SOC model and NDVI model. Each alternative is evaluated at the requested year. Separate outcomes are reported rather than adding mutually exclusive futures or averaging category codes. The scatterplot shows modeled relationships, not empirical causal evidence.
+Comparisons require the same immutable baseline, climate, SOC model and NDVI model. Each alternative is evaluated at the requested year. Separate outcomes are reported rather than adding mutually exclusive futures or averaging category codes. Between-design means, ranges and population standard deviations describe alternative designs, not confidence intervals or model uncertainty. The unchanged reference is excluded from that distribution.
 
 The map overlays DataSF’s 41 Analysis Neighborhoods as dark outlines above a faint decision grid. These are geographic reference boundaries, not simulation cells. The bundled `static/data/sf-neighborhoods.geojson` comes from the existing GIS snapshot of [DataSF Analysis Neighborhoods](https://data.sf.gov/d/j2bu-swwd), retrieved October 24, 2026. Outlines do not capture pointer input, so painting and map navigation work through them.
 
 ## Simulated land degradation
 
-`degradation.py` combines land-cover transitions, soil-carbon status and `productivity.py` using **one out, all out**. Any known decline wins; otherwise all three must be known before reporting stable or improving. The map uses purple/cream/green, with unknown gray. Hover shows each component; the clock graph reports declining hectares and unassessed area. Carbon-only results retain their existing fields and layer.
+`degradation.py` combines land-cover transitions, soil-carbon status and `productivity.py` using **one out, all out**. Any known decline wins; otherwise all three must be known before reporting stable or improving. The API retains categorical results and assessed hectares. The editor and comparison maps now show the underlying numeric components: carbon change (−100…+100%), productivity slope (−0.05…+0.05 NDVI/year), state (−9…+9 ranks), and performance (0…1.5×, neutral at 1×). State is an integer rank difference, not a continuous physical measurement. Clock metrics are valid-area-weighted productivity means or percentage change in total known carbon stock; unavailable values are excluded and their coverage is shown. There is no combined continuous degradation score. Legacy degradation map links open the productivity-trend view.
 
 Productivity consumes our **evolving annual simulation**, not invented satellite history. Sample zero preserves the observed starting NDVI before edits; later samples evaluate the vegetation model at each year. An initial-year surface replacement first appears in the next annual assessment sample. Future actions cannot affect earlier results. Same-year edits resolve to the final cover.
 
@@ -125,13 +125,19 @@ Provenance: [productivity rules](https://github.com/ConservationInternational/tr
 
 Open the [interactive audit report](http://127.0.0.1:8780/static/audit/index.html) while the app is running. It contains measured annual results, selected-cell provenance, browser evidence and links to saved demo alternatives. The [machine-readable evidence](static/audit/evidence.json) records source/code hashes and every evaluated configuration.
 
-The audit checks eight real-SF scenarios across all 41 years, plus 420 combinations of seven cover choices, two park baseline years, five climate assumptions and six assessment times. It asserts area conservation, independent SOC-coefficient agreement, and no unedited-cell color changes in those scenarios. Browser checks exercise creation, all brushes, alternatives, comparison, exports, persistence, reset/undo and mobile. A separate live raster check creates a 2020 rectangle at 145 m with a selected climate and rejects incompatible comparisons.
+The audit checks eight real-SF scenarios across all 41 years, plus 420 combinations of seven cover choices, two park baseline years, five climate assumptions and six assessment times. It asserts area conservation, independent SOC-coefficient agreement, and no unedited-cell color changes in those scenarios. Browser checks exercise creation, all brushes, alternatives, comparison, exports, persistence, reset/undo and mobile. A separate live raster check creates a 2020 rectangle at 165 m with a selected climate and rejects incompatible comparisons.
 
 Useful stories are clearing before carbon loss, restoration after the productivity window, persistent carbon loss after replanting, land-cover decline with unchanged carbon, and insufficient evidence where soil data is absent. Water conversion is deliberately inconclusive for terrestrial productivity. These are model demonstrations, not recommendations to convert the selected sites.
 
-Comparison differences use an unchanged scenario **at the same target year**, never category-code averages or totals across mutually exclusive alternatives. `difference_from_unchanged` includes carbon, scene-mean NDVI, categorical hectares, net cover changes and visible cell-color transitions. `changed_ha` remains the historically edited area; `net_changed_ha` excludes cells whose cover has been restored even when carbon loss persists. Comparison links retain the degradation layer and focused extent across reloads.
+Comparison differences use an unchanged scenario **at the same target year**, never category-code averages or totals across mutually exclusive alternatives. `difference_from_unchanged` includes carbon, scene-mean NDVI, categorical hectares, net cover changes and visible cell-color transitions. `changed_ha` remains the historically edited area; `net_changed_ha` excludes cells whose cover has been restored even when carbon loss persists. Comparison links can retain the requested year and numeric layer across reloads. Rotating designs preserves the current map extent.
 
 Reproduce the model/report evidence with `uv run python scripts/scenario_audit.py`; exercise the full alternative workflow with `uv run python scripts/scenario_flow_check.py`; verify real region/year/climate setup with `uv run python scripts/region_configuration_check.py`. Test scripts use temporary databases. `seed_audit_scenes.py EXISTING_CITY_SCENE_ID` is an explicit separate step that creates demo alternatives in the existing workspace, verifies their outcomes, and refuses to overwrite an existing demo manifest.
+
+## Loading behavior
+
+Screen navigation uses one loading component and keeps the destination layout: designs stay full-screen with a back button, while projects and comparisons retain navigation. Superseded reads are cancelled; late responses cannot replace a newer screen. Search, creation progress, history and comparison updates show local status. Connection, screen, history and comparison failures offer retries; comparison failures retain the last successful year. Reduced-motion preferences are respected.
+
+Run `uv run python scripts/loading_check.py` for delayed/failed-request browser checks in an isolated database, including navigation cancellation, retries, stale searches and mobile layout. These tests use the bundled park fixture and do not depend on raster-provider availability.
 
 ## Map performance
 
@@ -148,7 +154,7 @@ uv run pytest -q
 uv run python scripts/browser_check.py
 uv run python scripts/painting_check.py
 uv run python scripts/city_check.py
-uv run python scripts/degradation_check.py
+uv run python scripts/numeric_layers_check.py
 uv run python scripts/ndvi_check.py
 ```
 
@@ -156,7 +162,15 @@ Browser checks use a temporary database and port 8781; Chromium must be availabl
 
 The NDVI check uses an isolated database and port 8783. It verifies immediate surface replacement, growth during playback, the unchanged observed reference in hover, and reset/reload without fetching new rasters. Unit and API tests cover response durations, interrupted transitions, missing/partial coverage, parameter versions, legacy-schema migration and clone/reset/undo.
 
-To prepare a fresh GGP snapshot, move the existing `data/ggp-YEAR.json` aside, then run `uv run python sources.py --year YEAR`. Source crops are cached in `runtime/source-cache/`; snapshots retain source URLs, retrieval time and crop SHA-256 hashes. Existing scenes continue referencing their original baseline.
+### Baseline cache
+
+Every region follows **resolve boundary → canonical request → cache lookup → raster retrieval and aggregation on a miss**. New grids are consistently 165 m. The request key includes normalized geometry, year, grid size, projection, dataset versions/URLs/bands, class mapping and aggregation version. Names, climate choices and user IDs do not change geographic inputs. Equivalent polygon orderings share a key; overlapping but different boundaries do not.
+
+Finished baselines live in `runtime/baseline-cache/`; raw raster crops live in `runtime/source-cache/`. Entries are checksum-verified and atomically written. Concurrent identical requests in one server share one retrieval. Missing source coverage is retained as unknown; a network-failure fallback is saved only in its scene and is not reusable cache data, so a subsequent creation can retry.
+
+`data/baseline-cache.json` is a static manifest of optional seed snapshots. Cache lookup does not branch on SF or park names. Changed source or aggregation versions miss old seeds automatically; a damaged/missing seed falls back to normal retrieval. To add a verified seed, use `scripts/index_baseline_seeds.py` with all intended snapshot paths. Do not reindex old data merely to silence a version mismatch.
+
+Run `uv run python sources.py --place ggp --year 2021 --refresh` (or `--place sf`) to bypass both baseline and raw-source caches and replace the runtime cache entry after successful retrieval. For other regions, call `build_baseline(..., bounds=[west, south, east, north], refresh=True)`. This does not overwrite tracked seed files or existing database baselines. SoilGrids uses a mutable `latest` URL; refresh is explicit rather than claiming that its contents never change. Saved scenes remain pinned to the snapshot they were created with; no database reset is required.
 
 ## Dataset expansion investigation — October 24, 2026
 
@@ -187,7 +201,7 @@ Sentinel-2 catalog presence is checked separately for each candidate year. The p
 | [Dynamic World](https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_DYNAMICWORLD_V1) | June 2015–present; global, 10 m, per acquisition | Useful for seasonal cover and confidence. Nine class probabilities plus labels; aggregate over a defined period. Probabilities are not measured fractions of land area. CC BY 4.0. |
 | [USGS Annual NLCD](https://www.usgs.gov/centers/eros/science/about-annual-nlcd) | 1985–2025; conterminous US, 30 m | Best long-history candidate for SF: 41 annual cover maps. Also offers imperviousness and change products. Latest range verified in USGS documentation; raster ingestion not tested here. |
 | [Landsat Collection 2 Level-2](https://www.usgs.gov/landsat-missions/landsat-collection-2-level-2-science-products) | Archive begins 1982; reflectance at 30 m | NDVI to pair with NLCD and extend history elsewhere. Process QA, sensor-specific bands, scale and offset. Surface temperature is also available where inputs permit. SF catalog presence checked during research, not annual composites. |
-| [MODIS MOD13Q1](https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MOD13Q1) | 2000–present; 250 m, 16-day NDVI/EVI | Convenient long vegetation series for larger landscapes. Too coarse to distinguish many of our 145 m decision cells; retain QA and source resolution. |
+| [MODIS MOD13Q1](https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MOD13Q1) | 2000–present; 250 m, 16-day NDVI/EVI | Convenient long vegetation series for larger landscapes. Too coarse to distinguish many of our 165 m decision cells; retain QA and source resolution. |
 | [ESA CCI / Copernicus C3S land cover](https://cds.climate.copernicus.eu/datasets/satellite-land-cover?tab=overview) | Annual since 1992; global, 300 m | Regional historical context. Catalog says “to present”; discover actual released years before exposing them. Less suitable for park-scale edits. |
 
 WorldCover itself remains a two-year product, and its different 2020/2021 algorithms confound simple change detection. Its [operational successor, Copernicus LCFM](https://esa-worldcover.org/en/copernicus-lcfm-operational-successor-esa-worldcover), is worth tracking, but the current announcement describes a released 2020 base map and planned later annual maps. A planned date range is not evidence of downloadable years.
@@ -219,3 +233,65 @@ The public Esri + Planetary Computer route fits our existing Python/rasterio sta
 Acceptance criteria for the first implementation: a real 2025 scene loads; class codes, units, cloud masks and coverage are inspected; sparse observations remain unknown; provenance survives export/reload; legacy scenes still work; historical and hypothetical years remain distinct. More dates improve historical evidence, but do not create a causal vegetation-growth model or a complete UNCCD degradation assessment.
 
 Initial goal-state notes are preserved in [DESIGN.md](DESIGN.md).
+
+
+## Assistant and background evaluations
+
+Use the floating assistant button at the bottom right to expand the conversation card. Enter sends; Shift+Enter inserts a new line; Escape stops the current response while focus is in the assistant card. Use `/clear` to start a fresh conversation and `/tasks` to list evaluations separately; these commands run locally without a model call. Press Escape to stop an active response before clearing it. It can inspect source coverage and cells, create or duplicate designs, change existing land cover, rename/change assumptions, undo/reset/delete, compare alternatives and start evaluations. A cell click supplies selection context. It follows your request without an optimization objective or draft-only restriction. Changes use the same revisions and undo history as manual edits. Markdown tables and fenced ASCII text are supported; HTML is sanitized locally with vendored Marked and DOMPurify.
+
+Ask the assistant to evaluate a design, or use **Evaluate in background** in comparison. Each evaluation captures exact revisions and requested years. Results stay linked to those snapshots even after further edits or deletion. Switching maps, advancing the visible clock and closing the panel do not cancel tasks. The header shows active work; reopen the panel and press Escape to stop the assistant, or use `/tasks` to stop an evaluation. Stopping the assistant retains committed edits and does not stop separately submitted evaluations. Saved evaluation pages use captured cells, metrics and revision metadata, rather than re-evaluating the current designs.
+
+Workers run in this local server process. Completed jobs, conversations and evaluations persist in SQLite. Server restart marks unfinished jobs interrupted; it does not resume them. Cancellation is cooperative between calculation steps and before commits; an in-flight source download can finish before its worker exits. Run one Uvicorn process against this database. No Redis, external queue or browser-owned evaluation loop is needed.
+
+### Gemini with token authentication
+
+The dedicated, billed project is `common-ground-hack-2026-rr`, with Vertex AI enabled. The configured model is `gemini-3-flash-preview` in `global`. This installation already has authorized Application Default Credentials. No API key is needed and credentials never go to the browser or repository.
+
+For a new machine/account with access to that project:
+
+```sh
+gcloud auth login --no-launch-browser --update-adc
+gcloud auth application-default set-quota-project common-ground-hack-2026-rr
+uv sync --frozen
+uv run uvicorn server:app --host 127.0.0.1 --port 8780
+```
+
+Paste the browser verification code into the waiting terminal prompt. `LAND_GOOGLE_PROJECT`, `LAND_GOOGLE_LOCATION` and `LAND_AGENT_MODEL` override provider settings. The Google SDK refreshes access tokens from server-side ADC. Model availability depends on the selected project; the documented model was tested against this project, not assumed from a catalog.
+
+### Small module boundaries
+
+| Module | Responsibility |
+|---|---|
+| `schemas.py` | Shared validated inputs |
+| `services.py` | Owner-scoped scenario operations, revisions and coherent snapshots |
+| `model.py`, `comparison.py` | Canonical evaluation and between-design statistics |
+| `jobs.py` | Persisted progress, cancellation, revision-bound evaluation results |
+| `agent_tools.py` | Thin application tools; summary-first inspection with explicit cell paging |
+| `agent_provider.py` | Replaceable model factory and token credentials |
+| `assistant.py` | DeepAgents orchestration, conversations and usage records |
+| `static/assistant-ui.js` | Persistent panel, sanitized Markdown and task updates |
+| `server.py`, `static/app.js` | HTTP adapters and map interactions |
+
+DeepAgents has application tools and planning only: filesystem, shell and delegated subagents are disabled. Tool results and conflicts are recorded. Conversation prose is not authoritative state; the agent re-reads current revisions before editing. The application remains a demo email workspace, not production identity/authentication.
+
+### Reproducible checks
+
+```sh
+uv run pytest -q
+uv run python scripts/assistant_ui_check.py
+uv run python scripts/numeric_layers_check.py
+uv run python scripts/scenario_flow_check.py
+# Opt-in: calls the real model and incurs Vertex AI usage.
+uv run python scripts/agent_live_check.py
+uv run python scripts/agent_cancel_check.py
+```
+
+These checks use isolated temporary databases. Browser artifacts, measurements and real-model tool traces are written to ignored `test-results/`; they do not alter your saved projects. The browser lifecycle test uses deterministic assistant responses and real scenario writes; the separate live check exercises actual Gemini/DeepAgents tools.
+
+Verified October 25, 2026: 155 Python tests passed. Browser checks cover desktop/mobile controls, fixed-view comparison, exact numeric map colors, Markdown sanitization, closed-panel completion, `/clear`, `/tasks`, cancellation, map refresh and undo. The live Gemini check created/duplicated Golden Gate Park designs, edited an existing design, compared them, evaluated two years, reported coverage and historical revisions, and undid its edit. It independently checks area sums, carbon aggregation, between-design mean and reference subtraction against persisted results. Real-request cancellation completed in **0.40 seconds** in a separate check; interrupted requests may incur usage that the provider does not return. Latest full live run: **96,277 input + 4,015 output = 100,292 reported tokens** across three conversation turns; no dollar cost is inferred from token counts.
+
+For the tested 2041 scenario, one forest-cell conversion produced modeled declining area **2.72 ha**, carbon change **−19.70 t C**, and soil coverage **123.10 / 417.15 ha**. Unassessed area was **291.68 ha**, versus **294.05 ha** for the unchanged baseline. These are scenario outputs, not observed degradation or validated forecasts. Real-model wording is nondeterministic; source coverage, model assumptions and saved tool results remain the evidence to check. Older audit screenshots document their recorded UI; the scripts above verify the current controls.
+
+The post-integration city profile (`test-results/performance-assistant.json`) measured median synchronous map updates of **8.8 ms**, pan-frame p95 **16.8 ms**, initial load **1.67 s**, and no browser errors for 4,781 cells on the test machine. These are local measurements, not performance guarantees.
+
+Gallery navigation now requests scene summaries and loads SVG thumbnails on demand, without evaluating every saved design. In the local 11-scene workspace, summary generation took **0.10 s / 4.6 KB**, versus **3.82 s / 31.2 MB** for the previous full scene response; thumbnail transfers are additional. An unchanged 2309 scene evaluated in **0.125 s**, versus **1.70 s**, with identical complete evaluation JSON. Long chart histories request at most 32 exact yearly evaluations per fetch and visibly label sampling; the default timeline API still returns every year. Run `uv run python scripts/navigation_check.py` for gallery, interrupted navigation, history, playback and mobile checks, and `uv run pytest -q tests/test_navigation.py` for API and thumbnail correctness.

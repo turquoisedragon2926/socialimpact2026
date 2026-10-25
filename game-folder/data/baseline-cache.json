@@ -1,0 +1,154 @@
+{
+  "entries": {
+    "e326c937ebc94ed7ee88c89eb58b018a15693080415f60bdbb0ee4d119a4b557": {
+      "request": {
+        "geometry_sha256": "b7ee7dc79047f8f8d1891def9e8ec2eb47aa67cee9adfc0c21510dce58dcfa56",
+        "year": 2020,
+        "cell_m": 165.0,
+        "crs": "EPSG:32610",
+        "datasets": {
+          "cover": {
+            "product": "ESA WorldCover",
+            "version": "v100",
+            "year": 2020,
+            "url_template": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/{version}/{year}/map/ESA_WorldCover_10m_{year}_{version}_{tile}_Map.tif",
+            "band": 1
+          },
+          "ndvi": {
+            "product": "WorldCover Sentinel-2 annual median NDVI",
+            "version": "v100",
+            "year": 2020,
+            "url_template": "https://esa-worldcover-s2.s3.eu-central-1.amazonaws.com/ndvi/{year}/{latitude}/ESA_WorldCover_10m_{year}_{version}_{tile}_NDVI.tif",
+            "band": 2
+          },
+          "soil": {
+            "product": "SoilGrids",
+            "version": "2.0",
+            "depth_cm": [
+              0,
+              30
+            ],
+            "statistic": "mean organic carbon stock",
+            "url": "https://files.isric.org/soilgrids/latest/data/ocs/ocs_0-30cm_mean.vrt"
+          }
+        },
+        "aggregation": "native-cover-mean-ndvi-overlap-soil-v1",
+        "class_map": {
+          "10": "trees",
+          "20": "grass",
+          "30": "grass",
+          "40": "crops",
+          "50": "built",
+          "60": "bare",
+          "70": "bare",
+          "80": "water",
+          "90": "wetland",
+          "95": "trees",
+          "100": "grass"
+        }
+      },
+      "file": "ggp-2020.json",
+      "sha256": "bbb54f7c74d55146fbcf8d020fde5570c4a1d21e6f9f2fd4142e8209093ec6e7"
+    },
+    "4fb6be8f0b0eba998b5e2e4bf27063a3e986dabc01d7d6323ef4d55db961e551": {
+      "request": {
+        "geometry_sha256": "b7ee7dc79047f8f8d1891def9e8ec2eb47aa67cee9adfc0c21510dce58dcfa56",
+        "year": 2021,
+        "cell_m": 165.0,
+        "crs": "EPSG:32610",
+        "datasets": {
+          "cover": {
+            "product": "ESA WorldCover",
+            "version": "v200",
+            "year": 2021,
+            "url_template": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/{version}/{year}/map/ESA_WorldCover_10m_{year}_{version}_{tile}_Map.tif",
+            "band": 1
+          },
+          "ndvi": {
+            "product": "WorldCover Sentinel-2 annual median NDVI",
+            "version": "v200",
+            "year": 2021,
+            "url_template": "https://esa-worldcover-s2.s3.eu-central-1.amazonaws.com/ndvi/{year}/{latitude}/ESA_WorldCover_10m_{year}_{version}_{tile}_NDVI.tif",
+            "band": 2
+          },
+          "soil": {
+            "product": "SoilGrids",
+            "version": "2.0",
+            "depth_cm": [
+              0,
+              30
+            ],
+            "statistic": "mean organic carbon stock",
+            "url": "https://files.isric.org/soilgrids/latest/data/ocs/ocs_0-30cm_mean.vrt"
+          }
+        },
+        "aggregation": "native-cover-mean-ndvi-overlap-soil-v1",
+        "class_map": {
+          "10": "trees",
+          "20": "grass",
+          "30": "grass",
+          "40": "crops",
+          "50": "built",
+          "60": "bare",
+          "70": "bare",
+          "80": "water",
+          "90": "wetland",
+          "95": "trees",
+          "100": "grass"
+        }
+      },
+      "file": "ggp-2021.json",
+      "sha256": "3bdfff23df885f5f8a47406670217bbb64a1f5bc6dcc51794a028a2acfce5594"
+    },
+    "62307e76d51ea56952577b2a1e413c918ef015eac277d5bcdb85d0469d279e92": {
+      "request": {
+        "geometry_sha256": "b3eafc53695ec9aa6bdabf386ee07c5b7194cf58ac00e9b9bfe0bc855ba0e146",
+        "year": 2021,
+        "cell_m": 165.0,
+        "crs": "EPSG:32610",
+        "datasets": {
+          "cover": {
+            "product": "ESA WorldCover",
+            "version": "v200",
+            "year": 2021,
+            "url_template": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/{version}/{year}/map/ESA_WorldCover_10m_{year}_{version}_{tile}_Map.tif",
+            "band": 1
+          },
+          "ndvi": {
+            "product": "WorldCover Sentinel-2 annual median NDVI",
+            "version": "v200",
+            "year": 2021,
+            "url_template": "https://esa-worldcover-s2.s3.eu-central-1.amazonaws.com/ndvi/{year}/{latitude}/ESA_WorldCover_10m_{year}_{version}_{tile}_NDVI.tif",
+            "band": 2
+          },
+          "soil": {
+            "product": "SoilGrids",
+            "version": "2.0",
+            "depth_cm": [
+              0,
+              30
+            ],
+            "statistic": "mean organic carbon stock",
+            "url": "https://files.isric.org/soilgrids/latest/data/ocs/ocs_0-30cm_mean.vrt"
+          }
+        },
+        "aggregation": "native-cover-mean-ndvi-overlap-soil-v1",
+        "class_map": {
+          "10": "trees",
+          "20": "grass",
+          "30": "grass",
+          "40": "crops",
+          "50": "built",
+          "60": "bare",
+          "70": "bare",
+          "80": "water",
+          "90": "wetland",
+          "95": "trees",
+          "100": "grass"
+        }
+      },
+      "file": "sf-2021.json",
+      "sha256": "8a0043ac01dc4746b617d7977c4c0666997f6138985fdf0bb99d6f15c05235f5"
+    }
+  }
+}

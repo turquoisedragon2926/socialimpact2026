@@ -17,7 +17,7 @@ with tempfile.TemporaryDirectory() as runtime:
         for i,v in enumerate(bounds):page.locator(f'#bound-{i}').fill(str(v))
         page.locator('#region-form button').click();page.locator('#create-world').click();expect(page.locator('#play-simulation')).to_be_visible(timeout=180000)
         sid=page.url.split('#scene/')[1];scene=ctx.request.get(URL+'/api/scenes/'+sid).json();b=scene['baseline']
-        assert scene['climate']=='tropical_moist' and b['year']==2020 and b['bounds']==bounds and b['cell_m']==145
+        assert scene['climate']=='tropical_moist' and b['year']==2020 and b['bounds']==bounds and b['cell_m']==165
         assert any(c['ndvi'] is not None for c in b['cells']) and any(c['fractions'] for c in b['cells'])
         assert any(s.get('files') for s in b['sources'])
         # Baseline years cannot silently be mixed in a scenario comparison.
@@ -29,6 +29,6 @@ with tempfile.TemporaryDirectory() as runtime:
         other=state['scene_id'];page.get_by_role('link',name='My projects',exact=True).click();page.locator(f'[data-select="{sid}"]').check();page.locator(f'[data-select="{other}"]').check();expect(page.locator('#compare-selected')).to_be_disabled();expect(page.locator('#compare-tray')).to_contain_text('same starting data, climate and model')
         assert ctx.request.post(URL+'/api/compare',data={'scene_ids':[sid,other],'year':2033}).status==422
         assert not errors,errors;browser.close()
-        result={'ok':True,'checks':['2020 baseline selection','exact rectangle raster retrieval','145 m decision cells','chosen climate retained','cover and NDVI observations present','incompatible comparison disabled and API rejected'],'cells':len(b['cells']),'warnings':b.get('warnings',[]),'javascript_errors':errors}
+        result={'ok':True,'checks':['2020 baseline selection','exact rectangle raster retrieval','165 m decision cells','chosen climate retained','cover and NDVI observations present','incompatible comparison disabled and API rejected'],'cells':len(b['cells']),'warnings':b.get('warnings',[]),'javascript_errors':errors}
         (ROOT/'static/audit/region-configuration.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result))
     finally:process.terminate();process.wait(timeout=10)

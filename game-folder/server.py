@@ -1,35 +1,33 @@
 """Local-first HTTP application with real account isolation and SQLite persistence."""
 import concurrent.futures
 import hashlib
-import json
 import os
 import re
 import secrets
 import sqlite3
-import threading
 import time
 from contextlib import contextmanager, asynccontextmanager
 from pathlib import Path
 from uuid import uuid4
 
-import httpx
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 import model
-import comparison
-from sources import build_baseline, validate_bounds, ROOT
+from services import ScenarioService, ServiceError
+from schemas import NewScene, ScenePatch, Action, Revision, Clone, Compare
+from schemas import EvaluationRequest, AssistantRequest
+from jobs import JobManager
+import assistant
+from sources import validate_bounds, ROOT
 
 RUNTIME = Path(os.environ.get("LAND_RUNTIME", ROOT / "runtime"))
 RUNTIME.mkdir(parents=True, exist_ok=True)
 DB = RUNTIME / "land.db"
 POOL = concurrent.futures.ThreadPoolExecutor(max_workers=2)
 JOBS = {}
-SEARCH_LOCK = threading.Lock()
-SEARCH_CACHE = {}
-LAST_SEARCH = 0.
 AUTH_ATTEMPTS = {}
 
 
@@ -70,10 +68,17 @@ def init_db():
 @asynccontextmanager
 async def lifespan(app):
     init_db()
+    app.state.jobs = JobManager(db)
+    assistant.init_conversations(db)
     yield
+    app.state.jobs.close()
 
 
 app = FastAPI(title="Common Ground", lifespan=lifespan)
+
+@app.exception_handler(ServiceError)
+async def service_error(request, exc):
+    return JSONResponse({'detail': exc.detail}, status_code=exc.status_code)
 
 
 @app.middleware("http")
@@ -150,44 +155,12 @@ def me(request: Request):
 
 
 def get_scene(scene_id, user_id):
-    with db() as con:
-        row = con.execute("SELECT * FROM scenes WHERE id=? AND user_id=?", (scene_id, user_id)).fetchone()
-        if not row:
-            raise HTTPException(404, "Scene not found.")
-        baseline = con.execute("SELECT data FROM baselines WHERE id=?", (row["baseline_id"],)).fetchone()
-    result = dict(row)
-    result["actions"] = json.loads(result["actions"])
-    result["baseline"] = json.loads(baseline["data"])
-    result["ndvi_model"] = model.ndvi.metadata(result["ndvi_model_version"])
-    result["degradation_model"] = {**model.degradation.metadata(), "productivity": model.productivity.metadata(result["baseline"]["year"])}
-    return result
+    return ScenarioService(db, user_id).get(scene_id)
 
 
 @app.get("/api/scenes")
-def scenes(request: Request):
-    user = current_user(request)
-    with db() as con:
-        rows = con.execute("SELECT * FROM scenes WHERE user_id=? ORDER BY updated DESC", (user["id"],)).fetchall()
-        output = []
-        for row in rows:
-            b = json.loads(con.execute("SELECT data FROM baselines WHERE id=?", (row["baseline_id"],)).fetchone()[0])
-            actions = json.loads(row["actions"])
-            evaluation = model.evaluate(b, actions, row["selected_year"], row["climate"], row["ndvi_model_version"])
-            output.append({**dict(row), "actions": actions, "metrics": evaluation["metrics"],
-                           "year": b["year"], "place": b["name"], "cell_count": len(b["cells"]),
-                           "preview": [{"geometry": c["geometry"], "cover": state["cover"]} for c, state in zip(b["cells"], evaluation["cells"])]})
-    return output
-
-
-class NewScene(BaseModel):
-    name: str = Field(min_length=1, max_length=100)
-    lat: float = Field(ge=-60, le=80)
-    lon: float = Field(ge=-179, le=179)
-    year: int = Field(ge=2020, le=2021)
-    place: str | None = None
-    location_name: str = Field(default="Selected place", max_length=200)
-    climate: str = "temperate_dry"
-    bounds: list[float] | None = Field(default=None, min_length=4, max_length=4)
+def scenes(request: Request, summary: bool = False):
+    return ScenarioService(db, current_user(request)["id"]).list(summary=summary)
 
 
 @app.get("/api/regions/sf")
@@ -212,14 +185,9 @@ def create_scene(body: NewScene, request: Request):
 
     def work():
         try:
-            baseline = build_baseline(body.lat, body.lon, body.year, body.location_name, body.place,
-                                      lambda text: JOBS[job_id].update(message=text), bounds=body.bounds)
-            scene_id = uuid4().hex
-            now = time.time()
-            with db() as con:
-                con.execute("INSERT OR IGNORE INTO baselines VALUES (?,?)", (baseline["id"], json.dumps(baseline)))
-                con.execute("INSERT INTO scenes(id,user_id,name,baseline_id,climate,selected_year,model_version,ndvi_model_version,created,updated) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                            (scene_id, user["id"], body.name.strip(), baseline["id"], body.climate, body.year, model.VERSION, model.ndvi.VERSION, now, now))
+            created = ScenarioService(db, user["id"]).create(body,
+                lambda text: JOBS[job_id].update(message=text))
+            scene_id = created['id']
             JOBS[job_id].update(status="complete", scene_id=scene_id, message="Your scene is ready.")
         except Exception as exc:
             JOBS[job_id].update(status="failed", message=str(exc)[:250])
@@ -236,195 +204,106 @@ def job(job_id: str, request: Request):
     return {k: v for k, v in item.items() if k != "user_id"}
 
 
+@app.get("/api/scenes/{scene_id}/preview.svg")
+def scene_preview(scene_id: str, request: Request):
+    svg = ScenarioService(db, current_user(request)["id"]).preview(scene_id)
+    return Response(svg, media_type="image/svg+xml")
+
+
 @app.get("/api/scenes/{scene_id}")
 def scene(scene_id: str, request: Request):
     return get_scene(scene_id, current_user(request)["id"])
 
 
-class ScenePatch(BaseModel):
-    revision: int
-    name: str | None = Field(default=None, min_length=1, max_length=100)
-    selected_year: int | None = None
-    climate: str | None = None
-
-
 def update_scene(scene, **updates):
-    with db() as con:
-        updates.update(updated=time.time())
-        clause = ",".join(f"{key}=?" for key in updates)
-        cursor = con.execute(f"UPDATE scenes SET {clause}, revision=revision+1 WHERE id=? AND revision=?",
-                             (*updates.values(), scene["id"], scene["revision"]))
-        if cursor.rowcount != 1:
-            raise HTTPException(409, "This scene changed in another window. Reload it before editing.")
-    return {"revision": scene["revision"]+1}
+    return ScenarioService(db, scene["user_id"])._update(scene, **updates)
 
 
 @app.patch("/api/scenes/{scene_id}")
 def patch_scene(scene_id: str, body: ScenePatch, request: Request):
-    item = get_scene(scene_id, current_user(request)["id"])
-    if body.revision != item["revision"]:
-        raise HTTPException(409, "Scene changed. Reload before editing.")
-    updates = body.model_dump(exclude_none=True, exclude={"revision"})
-    if "climate" in updates and updates["climate"] not in model.CLIMATES:
-        raise HTTPException(422, "Unsupported climate.")
-    if "selected_year" in updates and updates["selected_year"] < item["baseline"]["year"]:
-        raise HTTPException(422, "Year cannot precede the baseline.")
-    return update_scene(item, **updates)
-
-
-class Action(BaseModel):
-    revision: int
-    cell_ids: list[str] = Field(min_length=1, max_length=15000)
-    cover: str
-    year: int
-    note: str = Field(default="", max_length=1000)
+    return ScenarioService(db, current_user(request)["id"]).patch(scene_id, body)
 
 
 @app.post("/api/scenes/{scene_id}/actions")
 def action(scene_id: str, body: Action, request: Request):
-    item = get_scene(scene_id, current_user(request)["id"])
-    if body.revision != item["revision"]:
-        raise HTTPException(409, "Scene changed. Reload before editing.")
-    cells = {c["id"]: c for c in item["baseline"]["cells"]}
-    if body.cover not in model.COVERS or any(c not in cells or not cells[c]["fractions"] for c in body.cell_ids):
-        raise HTTPException(422, "Select mapped cells and a supported land cover.")
-    latest = max([item["baseline"]["year"]]+[a["year"] for a in item["actions"]])
-    if body.year < latest:
-        raise HTTPException(422, f"Add edits at {latest} or later. Undo later edits to change the past.")
-    new_action = {"id": uuid4().hex, "cell_ids": list(dict.fromkeys(body.cell_ids)), "cover": body.cover,
-                  "year": body.year, "note": body.note.strip()}
-    return update_scene(item, actions=json.dumps(item["actions"]+[new_action]), selected_year=body.year)
-
-
-class Revision(BaseModel):
-    revision: int
+    return ScenarioService(db, current_user(request)["id"]).act(scene_id, body)
 
 
 @app.post("/api/scenes/{scene_id}/undo")
 def undo(scene_id: str, body: Revision, request: Request):
-    item = get_scene(scene_id, current_user(request)["id"])
-    if body.revision != item["revision"]:
-        raise HTTPException(409, "Scene changed. Reload before editing.")
-    if not item["actions"] and item["reset_backup"]:
-        backup = json.loads(item["reset_backup"])
-        return update_scene(item, actions=json.dumps(backup["actions"]),
-                            selected_year=backup["selected_year"], reset_backup=None)
-    return update_scene(item, actions=json.dumps(item["actions"][:-1]))
+    return ScenarioService(db, current_user(request)["id"]).undo(scene_id, body)
 
 
 @app.post("/api/scenes/{scene_id}/reset")
 def reset_scene(scene_id: str, body: Revision, request: Request):
-    item = get_scene(scene_id, current_user(request)["id"])
-    if body.revision != item["revision"]:
-        raise HTTPException(409, "Scene changed. Reload before resetting.")
-    if not item["actions"] and item["selected_year"] == item["baseline"]["year"]:
-        return {"revision": item["revision"]}
-    backup = json.dumps({"actions": item["actions"], "selected_year": item["selected_year"]})
-    return update_scene(item, actions="[]", selected_year=item["baseline"]["year"], reset_backup=backup)
-
-
-class Clone(BaseModel):
-    name: str | None = Field(default=None, min_length=1, max_length=100)
+    return ScenarioService(db, current_user(request)["id"]).reset(scene_id, body)
 
 
 @app.post("/api/scenes/{scene_id}/clone")
 def clone(scene_id: str, request: Request, reset: bool = False, body: Clone | None = None):
-    item = get_scene(scene_id, current_user(request)["id"])
-    new_id, now = uuid4().hex, time.time()
-    with db() as con:
-        con.execute("INSERT INTO scenes(id,user_id,name,baseline_id,actions,climate,selected_year,model_version,ndvi_model_version,created,updated) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                    (new_id,item["user_id"],body.name if body and body.name else item["name"][:80]+(" · unchanged" if reset else " · alternative"),item["baseline_id"],
-                     "[]" if reset else json.dumps(item["actions"]),item["climate"],item["selected_year"],item["model_version"],item["ndvi_model_version"],now,now))
-    return {"id": new_id}
+    return ScenarioService(db, current_user(request)["id"]).clone(scene_id, reset, body)
 
 
 @app.delete("/api/scenes/{scene_id}")
 def delete(scene_id: str, request: Request):
-    user = current_user(request)
-    get_scene(scene_id, user["id"])
-    with db() as con:
-        con.execute("DELETE FROM scenes WHERE id=? AND user_id=?", (scene_id, user["id"]))
-    return {"ok": True}
+    return ScenarioService(db, current_user(request)["id"]).delete(scene_id)
 
 
 @app.get("/api/scenes/{scene_id}/timeline")
-def timeline(scene_id: str, request: Request, start_year: int | None = None, end_year: int | None = None):
-    item = get_scene(scene_id, current_user(request)["id"])
-    baseline_year = item["baseline"]["year"]
-    start = baseline_year if start_year is None else start_year
-    end = item["selected_year"] if end_year is None else end_year
-    if not baseline_year <= start <= end:
-        raise HTTPException(422, "Timeline must start at or after baseline and end at or after its start.")
-    return {"points": [
-        {"year": year, "metrics": model.evaluate(
-            item["baseline"], item["actions"], year, item["climate"],
-            item["ndvi_model_version"])["metrics"]}
-        for year in range(start, end + 1)
-    ]}
+def timeline(scene_id: str, request: Request, start_year: int | None = None, end_year: int | None = None, max_points: int | None = None):
+    return ScenarioService(db, current_user(request)["id"]).timeline(scene_id, start_year, end_year, max_points)
 
 
 @app.get("/api/scenes/{scene_id}/evaluate")
 def evaluate(scene_id: str, year: int, request: Request):
-    item = get_scene(scene_id, current_user(request)["id"])
-    try:
-        return model.evaluate(item["baseline"], item["actions"], year, item["climate"], item["ndvi_model_version"])
-    except ValueError as exc:
-        raise HTTPException(422, str(exc))
-
-
-class Compare(BaseModel):
-    scene_ids: list[str] = Field(min_length=2, max_length=12)
-    year: int
+    return ScenarioService(db, current_user(request)["id"]).evaluate(scene_id, year)
 
 
 @app.post("/api/compare")
 def compare(body: Compare, request: Request):
-    user = current_user(request)
-    items = [get_scene(i, user["id"]) for i in dict.fromkeys(body.scene_ids)]
-    if len(items) < 2 or len({(s["baseline_id"],s["climate"],s["model_version"],s["ndvi_model_version"]) for s in items}) != 1:
-        raise HTTPException(422, "Compare alternatives with the same baseline, climate and model. Duplicate a scene to create a comparable alternative.")
-    try:
-        first = items[0]
-        reference = model.evaluate(first['baseline'], [], body.year, first['climate'], first['ndvi_model_version'])
-        scenarios = []
-        for s in items:
-            result = model.evaluate(s['baseline'], s['actions'], body.year, s['climate'], s['ndvi_model_version'])
-            scenarios.append({'id': s['id'], 'name': s['name'], **result,
-                              'difference_from_unchanged': comparison.differences(reference, result, first['baseline'])})
-        return {'year': body.year, 'baseline': first['baseline'], 'reference': reference,
-                'reference_description': 'No interventions, evaluated at the same year, baseline and climate. Differences are modeled scenario contrasts, not empirical causal effects.',
-                'scenes': scenarios}
-    except ValueError as exc:
-        raise HTTPException(422, str(exc))
+    return ScenarioService(db, current_user(request)["id"]).compare(body)
 
 
 @app.get("/api/search")
 def search(q: str, request: Request):
-    global LAST_SEARCH
-    current_user(request)
-    q = q.strip()[:180]
-    if len(q) < 3:
-        raise HTTPException(422, "Enter at least three characters.")
-    if q in SEARCH_CACHE:
-        return SEARCH_CACHE[q]
-    with SEARCH_LOCK:
-        time.sleep(max(0, 1.1-(time.monotonic()-LAST_SEARCH)))
-        LAST_SEARCH = time.monotonic()
-        try:
-            r = httpx.get("https://nominatim.openstreetmap.org/search",
-                          params={"q": q, "format": "jsonv2", "limit": 5}, timeout=20,
-                          headers={"User-Agent": "CommonGroundHackathon/0.1 (local educational land-planning prototype)"})
-            r.raise_for_status()
-            result = [{"name": p["display_name"], "lat": float(p["lat"]), "lon": float(p["lon"])} for p in r.json()]
-        except Exception:
-            raise HTTPException(502, "Place search is unavailable. Use the Golden Gate Park shortcut or enter coordinates.")
-        SEARCH_CACHE[q] = result
-        return result
+    return ScenarioService(db, current_user(request)["id"]).search(q)
 
 
 @app.get("/")
 def index():
     return FileResponse(ROOT / "static/index.html")
+
+
+@app.post('/api/evaluations')
+def background_evaluation(body: EvaluationRequest, request: Request):
+    service = ScenarioService(db, current_user(request)['id'])
+    return request.app.state.jobs.evaluate(service, body)
+
+
+@app.post('/api/assistant')
+def assistant_turn(body: AssistantRequest, request: Request):
+    service = ScenarioService(db, current_user(request)['id'])
+    return assistant.submit(service, request.app.state.jobs, body)
+
+
+@app.get('/api/conversations/{conversation_id}')
+def assistant_conversation(conversation_id: str, request: Request):
+    return assistant.conversation(db,current_user(request)['id'],conversation_id)
+
+
+@app.get('/api/tasks')
+def tasks(request: Request):
+    return request.app.state.jobs.list(current_user(request)['id'])
+
+
+@app.get('/api/tasks/{task_id}')
+def task(task_id: str, request: Request, result: bool = False):
+    return request.app.state.jobs.get(current_user(request)['id'], task_id, result)
+
+
+@app.post('/api/tasks/{task_id}/cancel')
+def cancel_task(task_id: str, request: Request):
+    return request.app.state.jobs.cancel(current_user(request)['id'], task_id)
 
 
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")

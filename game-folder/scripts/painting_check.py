@@ -82,7 +82,7 @@ with tempfile.TemporaryDirectory() as runtime:
             assert 10 <= dock['x'] <= 25
             page.locator('[data-layer="change"]').click()
             fills=page.locator('[data-cell]').evaluate_all('(cells)=>cells.map(c=>c.getAttribute("fill"))')
-            assert '#ffffe1' in fills and set(fills)<= {'#ffffe1','#dcded9'}
+            assert '#ffffe1' in fills and set(fills)<= {'#ffffe1','#d9dcd6'}
             page.locator('[data-layer="cover"]').click()
 
             held=[]

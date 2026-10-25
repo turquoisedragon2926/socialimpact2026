@@ -23,6 +23,8 @@ _TABLE = json.loads((Path(__file__).parent/'data/trends-productivity-reference.j
 def annual_series(initial, fractions, actions, start, model_version, duration=40):
     # Include the immutable observation before any baseline-year edit. Each
     # later point evaluates the scenario at that year, without future actions.
+    if not actions:
+        return (initial,) * (duration + 1)
     cell = {'ndvi': initial, 'fractions': dict(fractions)}
     edits = [{'year': year, 'cover': cover} for year, cover in actions]
     return (initial,) + tuple(ndvi.evaluate_cell(cell, [a for a in edits if a['year'] <= year], year)['ndvi']
@@ -39,7 +41,7 @@ def combine(trajectory, state, performance):
     return 'improving' if trajectory == 'improving' else 'stable'
 
 
-def assess(series, groups):
+def assess(series, groups, checkpoint=lambda: None):
     """Rows are cells, columns annual samples; missing inputs stay NaN."""
     values = np.asarray(series, dtype=float)
     count, years = values.shape
@@ -53,8 +55,15 @@ def assess(series, groups):
     if years >= BASELINE_YEARS:
         x = np.arange(years)-(years-1)/2
         slopes = (safe @ x)/(x @ x)
-        for j in range(years-1):
-            s += np.sign(safe[:, j+1:] - safe[:, j, None]).sum(axis=1)
+        # Constant rows have a Mann–Kendall score of exactly zero.
+        varying = np.flatnonzero(np.ptp(safe, axis=1) > 0)
+        changing = safe[varying]
+        if len(varying):
+            scores = np.zeros(len(varying))
+            for j in range(years-1):
+                checkpoint()
+                scores += np.sign(changing[:, j+1:] - changing[:, j, None]).sum(axis=1)
+            s[varying] = scores
         table = _TABLE['kendall_95_n4_onwards']
         # Beyond the reference table, use the large-sample normal approximation.
         # Uncorrected tie variance is conservative for our plateauing series.
@@ -102,7 +111,7 @@ def assess(series, groups):
     return output
 
 
-def evaluate(baseline, actions, year, model_version):
+def evaluate(baseline, actions, year, model_version, checkpoint=lambda: None):
     by_cell = defaultdict(dict)
     for action in actions:
         if action['year'] <= year:
@@ -110,6 +119,7 @@ def evaluate(baseline, actions, year, model_version):
                 by_cell[cid][action['year']] = action['cover']
     series, groups, water_history = [], [], []
     for cell in baseline['cells']:
+        checkpoint()
         known = cell.get('ndvi') is not None and cell.get('coverage', {}).get('ndvi', 1) > 0
         seq = annual_series(cell.get('ndvi') if known else None,
             tuple(sorted(cell['fractions'].items())), tuple(sorted(by_cell[cell['id']].items())),
@@ -120,7 +130,7 @@ def evaluate(baseline, actions, year, model_version):
     # A terrestrial vegetation metric cannot interpret an open-water interval
     # as failed vegetation. Exclude it from reference percentiles as well.
     assessment_groups = ['water' if water else group for water, group in zip(water_history, groups)]
-    output = assess(series, assessment_groups)
+    output = assess(series, assessment_groups, checkpoint)
     for row, water in zip(output, water_history):
         row['unavailable_reason'] = ('Open-water history is outside this terrestrial productivity model.' if water else
             f'Needs {BASELINE_YEARS+RECENT_YEARS} annual samples.' if row['samples'] < BASELINE_YEARS+RECENT_YEARS else

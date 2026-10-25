@@ -36,7 +36,7 @@ const originalUpdate=updateView;updateView=function(...args){const start=perform
    load=time.monotonic()-start
    page.wait_for_timeout(300)
    initial=page.evaluate('({paths:document.querySelectorAll("path").length,tooltipObjects:[...__profile.S.cells.values()].filter(l=>l.getTooltip()).length,updates:__profile.updates.slice(),longTasks:__profile.longTasks.slice()})')
-   for layer in ['ndvi','soc','degradation','cover']:
+   for layer in ['ndvi','soc','trajectory','cover']:
     page.locator('[data-layer="'+layer+'"]').click()
    page.locator('[data-brush="trees"]').click();page.locator('[data-brush="trees"]').click()
    page.evaluate('''()=>{let prev=performance.now();window.__recordFrames=true;function frame(now){__profile.frames.push(now-prev);prev=now;if(__recordFrames)requestAnimationFrame(frame);}requestAnimationFrame(frame);}''')
