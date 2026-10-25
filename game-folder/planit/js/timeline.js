@@ -52,6 +52,7 @@ export function createTimeline({ el, game, audio, onEnd = () => {}, onClose = ()
     <div class="tl-track" role="slider" tabindex="-1" aria-label="Year"><i class="tl-fill"></i><i class="tl-plan" hidden></i><b class="tl-knob"></b><div class="tl-ticks"></div></div>
     <div class="tl-foot">
       <button type="button" class="btn small tl-play">Pause</button>
+      <button type="button" class="btn small tl-reset" title="Back to the first year, and the map back to its starting view">↺ Reset</button>
       <span class="tl-note">Rates of change are placeholders.</span>
     </div>`;
   const $ = (s) => el.querySelector(s);
@@ -233,6 +234,15 @@ export function createTimeline({ el, game, audio, onEnd = () => {}, onClose = ()
     audio?.play('click');
     if (playing) setPlaying(false);
     else { if (years >= last - first) fromStart(); setPlaying(true); }
+  });
+  // Reset: stop and rewind to the first year (before the plan), like Common Ground's clock.
+  $('.tl-reset').addEventListener('click', () => {
+    audio?.play('click');
+    if (playing) setPlaying(false);
+    fromStart();
+    $('.tl-play').textContent = 'Play';
+    game.resetView?.();   // and the map back to its starting view
+    if (live) show(first);
   });
   $('.tl-close').addEventListener('click', () => { audio?.play('click'); api.close(); });
 
