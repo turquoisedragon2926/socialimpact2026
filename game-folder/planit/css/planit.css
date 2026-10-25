@@ -154,6 +154,17 @@ body:has(#goal:not([hidden])) .controls-hint { display: none; } /* the challenge
 .tl-foot { display: flex; align-items: center; gap: 10px; }
 .tl-note { font-size: 11.5px; color: var(--ink-2); }
 .timeline.is-playing .tl-now { color: var(--teal); }
+.tl-track[tabindex="0"] { cursor: pointer; touch-action: none; }
+.tl-track:focus-visible { outline: 2px solid var(--teal); outline-offset: 4px; }
+.tl-plan { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--ink-2); opacity: 0.55; }
+.tl-layers { display: flex; gap: 4px; padding: 3px; border-radius: 999px; background: var(--paper-2); box-shadow: inset 0 0 0 1px var(--line); }
+.tl-layers button { flex: 1; border: 0; border-radius: 999px; padding: 5px 0; background: none; font: inherit; font-size: 12px; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+.tl-layers button[aria-checked="true"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 0 var(--edge), 0 0 0 1px var(--line); }
+.tl-graph { width: 100%; height: 54px; overflow: visible; }
+.tl-graph-line { fill: none; stroke: var(--line); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.tl-graph-past { fill: none; stroke: var(--teal); stroke-width: 2.2; vector-effect: non-scaling-stroke; }
+.tl-graph-now { stroke: var(--ink-2); stroke-width: 1; stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; }
+.tl-graph-dot { fill: var(--teal); stroke: var(--paper); stroke-width: 1.5; }
 
 /* ---------- legend + readout ---------- */
 .legend { position: fixed; z-index: 5; right: 20px; top: 80px; width: 250px; padding: 14px 16px; display: grid; gap: 6px; }

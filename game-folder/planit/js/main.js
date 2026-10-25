@@ -45,7 +45,7 @@ catch (err) {
 }
 const game = createGame({ container: $('stage'), data, audio, hud });
 window.planit = game; // backend hooks: see docs/README.md
-connectBackend(game, data).catch((err) => console.warn('planIt backend unavailable, using mock values:', err));
+const backendReady = connectBackend(game, data).catch((err) => { console.warn('planIt backend unavailable, using mock values:', err); return null; });
 $('loading').remove();
 
 // Tray of land covers, with short labels (the full name is the tooltip).
@@ -125,6 +125,7 @@ const timeline = createTimeline({
   onEnd: () => { refreshTray(); if (challenge) showResult(); },
   onClose: () => { setTrayOpen(trayBeforeTimeline, { remember: false }); refreshTray(); },
 });
+backendReady.then((b) => b && timeline.connect(b));   // freestyle's time-lapse then runs the land model year by year
 $('submit-btn').addEventListener('click', () => {
   if (!game.submit()) return;
   if (!$('timeline').hidden) timeline.close();
@@ -205,6 +206,7 @@ async function startChallenge(c) {
   await game.reset();
   baseline = { codes: game.world.state.codes.slice(), values: Float32Array.from(game.world.values) };
   timeline.close();
+  timeline.setLive(false);
   enterGame(c.title);
   $('goal').hidden = false;
   $('goal-face').src = portraits[c.character] || '';
@@ -279,6 +281,7 @@ function enterGame(label) {
 }
 async function freestyle() {
   challenge = null;
+  timeline.setLive(true);
   $('goal').hidden = true;
   showCovers(null);
   game.setAllowance(null);

@@ -106,6 +106,24 @@ export function cellValue(cell) {
   return Math.max(-1, Math.min(1, net * strength));
 }
 
+// The time-lapse can also tint the map by vegetation or soil carbon, like
+// Common Ground's layers: green where it grows, dark where it falls.
+const clamp1 = (v) => Math.max(-1, Math.min(1, v));
+// The time-lapse's degradation layer is Common Ground's "Land degradation" map
+// exactly: the model's own status per cell (one out, all out), with no planIt
+// fallback. Unknown (not enough evidence) and stable both draw as 0.
+export function statusValue(cell) {
+  const d = cell.degradation;
+  if (d?.status === 'declining') return 0.35 + 0.65 * d.fractions.declining;
+  if (d?.status === 'improving') return -(0.35 + 0.65 * d.fractions.improving);
+  return 0;
+}
+export const LAYER_VALUES = {
+  degradation: statusValue,
+  vegetation: (cell) => clamp1(-(cell.ndvi_delta ?? 0) * 4),   // ±0.25 NDVI is full strength
+  carbon: (cell) => clamp1(-(cell.delta_pct ?? 0) / 30),       // ±30% soil carbon is full strength
+};
+
 // Signs in if needed. Resolves true when a Common Ground server is there, false
 // when there is none (for example the static artifact).
 let signedIn;
@@ -167,14 +185,19 @@ export async function connectBackend(game, data) {
     }
   }
 
-  async function evaluate() {
-    const result = await api(`/api/scenes/${sceneId}/evaluate?year=${editYear + TIMELINE.years}`);
+  // Tile values for one evaluated year. layer: a LAYER_VALUES key for the
+  // time-lapse, or none for the Land health view's own rule (cellValue).
+  function toValues(result, layer) {
     const values = new Float32Array(data.rows * data.cols);
     for (const cell of result.cells) {
       const i = index.get(cell.id);
-      if (i != null) values[i] = cellValue(cell);
+      if (i != null) values[i] = (LAYER_VALUES[layer] ?? cellValue)(cell);
     }
     return values;
+  }
+
+  async function evaluate() {
+    return toValues(await api(`/api/scenes/${sceneId}/evaluate?year=${editYear + TIMELINE.years}`));
   }
 
   // One model run at a time; a run that started earlier never overwrites a later one.
@@ -230,7 +253,17 @@ export async function connectBackend(game, data) {
 
   const note = document.querySelector('#legend .note');
   if (note) note.textContent = `Simulated ${TIMELINE.years} years after your plan with the team's land model (UNCCD / Trends.Earth rules). Illustrative, not a forecast.`;
-  const backend = { sceneId, scene, ids: data.ids, pull, get year() { return editYear + TIMELINE.years; } };
+  const backend = {
+    sceneId, scene, ids: data.ids, pull, toValues,
+    get year() { return editYear + TIMELINE.years; },
+    get editYear() { return editYear; },
+    baselineYear: data.baselineYear,
+    get revision() { return revision; },
+    // For the time-lapse: the model's result for one year, and the scene-wide
+    // metrics for a run of years (the same calls Common Ground's clock makes).
+    evaluateYear: (year) => api(`/api/scenes/${sceneId}/evaluate?year=${year}`),
+    history: (start, end) => api(`/api/scenes/${sceneId}/timeline?start_year=${start}&end_year=${end}&max_points=40`),
+  };
   game.backend = backend;   // for scripts and tests
   const scienceBtn = addHudLinks();
   if (scienceBtn) import('./science.js').then(({ addScience }) => { game.science = addScience(game, backend, scienceBtn); }).catch((err) => console.warn('Science view unavailable:', err));
