@@ -148,7 +148,7 @@ const syncSound = () => soundBtn.setAttribute('aria-pressed', String(!audio.mute
 syncSound();
 soundBtn.addEventListener('click', () => { audio.toggleMute(); syncSound(); });
 window.addEventListener('keydown', (e) => {
-  if (e.key.toLowerCase() === 'm' && !$('hud').hidden) { audio.toggleMute(); syncSound(); }
+  if (e.key.toLowerCase() === 'm' && !$('hud').hidden && !e.target.closest?.('input, textarea')) { audio.toggleMute(); syncSound(); }
 });
 
 // ---------- challenges ----------
