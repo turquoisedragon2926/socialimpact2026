@@ -13,6 +13,9 @@ dependencies = [
     "httpx>=0.28,<1",
     "deepagents>=0.7,<1",
     "langchain-google-genai>=4,<5",
+    "tifffile>=2026.3.3",
+    "pyarrow>=26.0.0",
+    "imagecodecs>=2026.3.6",
 ]
 
 [dependency-groups]

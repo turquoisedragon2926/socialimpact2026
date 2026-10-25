@@ -1,0 +1,32 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My maps · planIt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="./css/planit.css">
+<link rel="stylesheet" href="./css/maps.css">
+
+<div class="maps-page">
+  <header class="maps-top">
+    <a class="wordmark" href="./" aria-label="planIt home">plan<span>I</span>t</a>
+    <a class="tool" href="/" title="The full science view: every layer, comparisons and analytics">
+      <span aria-hidden="true">🔬</span><span>Science view</span>
+    </a>
+  </header>
+  <main>
+    <span class="eyebrow">Freestyle</span>
+    <h1>My maps</h1>
+    <p class="lede">Every city you've replanned is saved here. Pick one to keep building, or open it in the science view to see the numbers behind it.</p>
+    <p class="maps-status" id="status">Loading your maps…</p>
+    <section class="map-grid" id="grid" aria-label="Your maps"></section>
+  </main>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module" src="./js/maps.js"></script>

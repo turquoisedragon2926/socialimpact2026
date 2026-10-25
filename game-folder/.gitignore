@@ -4,3 +4,4 @@ __pycache__/
 runtime/
 test-results/
 *.pyc
+planit/tools/.cache/

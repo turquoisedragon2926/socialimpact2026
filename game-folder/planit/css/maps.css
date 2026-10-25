@@ -1,0 +1,28 @@
+/* maps.css: the My maps page, in planIt's cream-panel look. */
+body.maps { overflow: auto; user-select: auto; }
+.maps-page { min-height: 100%; padding: 22px 32px 60px; }
+.maps-top { display: flex; align-items: center; justify-content: space-between; }
+.maps-top .wordmark { text-decoration: none; }
+.maps-top .tool { text-decoration: none; color: var(--ink); }
+.maps-page main { max-width: 1120px; margin: 34px auto 0; }
+.maps-page h1 { font-size: 44px; font-weight: 600; letter-spacing: -0.02em; margin: 6px 0 8px; }
+.lede { max-width: 620px; color: var(--ink-2); font-size: 17px; margin: 0 0 26px; }
+.maps-status { color: var(--ink-2); }
+.maps-status:empty { display: none; }
+.map-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 24px; }
+.map-card { display: flex; flex-direction: column; overflow: hidden; }
+.map-card .thumb { display: block; aspect-ratio: 4 / 3; background: #dfeee6; overflow: hidden; }
+.map-card .thumb img { width: 100%; height: 100%; object-fit: contain; padding: 14px; transform: rotate(-6deg); transition: transform .3s; }
+.map-card .thumb:hover img { transform: rotate(-3deg) scale(1.04); }
+.map-card .body { padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.map-card h2 { font-size: 20px; font-weight: 600; margin: 0; }
+.map-card .meta { color: var(--ink-2); font-size: 14px; margin: 0; }
+.map-card .chip { align-self: flex-start; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: #e3efe6; color: var(--green-deep); }
+.map-card .chip.none { background: var(--paper-2); color: var(--ink-2); }
+.map-card .actions { display: flex; gap: 10px; margin-top: auto; padding-top: 12px; }
+.map-card .actions .btn { text-decoration: none; text-align: center; }
+.map-card .actions .play { flex: 1; }
+.map-card .actions .science { width: 48px; padding-left: 0; padding-right: 0; font-size: 18px; }
+.new-card { display: grid; place-items: center; min-height: 300px; border: 2px dashed #c9bfa6; border-radius: var(--radius); color: var(--ink-2); text-decoration: none; font-weight: 500; gap: 6px; background: rgba(255, 253, 246, 0.35); }
+.new-card b { font-size: 40px; font-weight: 400; line-height: 1; color: var(--green); }
+.new-card:hover { background: rgba(255, 253, 246, 0.6); }

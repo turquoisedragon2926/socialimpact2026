@@ -12,7 +12,7 @@ uv sync --frozen
 uv run uvicorn server:app --host 127.0.0.1 --port 8780
 ```
 
-Open http://127.0.0.1:8780. Requires [uv](https://docs.astral.sh/uv/); the bundled San Francisco 2021 baseline is ready to use. Local accounts, sessions and projects are not shared in Git.
+Open http://127.0.0.1:8780. The planIt game is at http://127.0.0.1:8780/planit/ (see [game-folder/planit/docs/BACKEND.md](game-folder/planit/docs/BACKEND.md)). Requires [uv](https://docs.astral.sh/uv/); the bundled San Francisco 2021 baseline is ready to use. Local accounts, sessions and projects are not shared in Git.
 
 ## The problem
 
