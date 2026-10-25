@@ -86,7 +86,7 @@ Final lines are in `js/challenges.js`, from the "planIt challenge stories" doc. 
 ## Assumptions I made (all easy to change)
 
 - **Roofs.** Gable roofs, rowhouse caps, apartment and mid-rise caps, and half the warehouse roofs now use muted pastels: dusty pink, peach, mint, lavender, butter, and powder blue (`LANDCOVERS[50].colors.roofs`). Towers keep their glass.
-- **Sky.** A fixed CSS gradient behind a transparent canvas. 21 low-poly clouds slowly circle the island: 14 around its base, like the reference, and 7 high ones at the edges.
+- **Sky.** A fixed CSS gradient behind a transparent canvas. 21 low-poly clouds slowly circle below the island, outside even a square map's corners, so none ever passes through the city (Kiran's call). They also render in their own pass before the city (layer 1 in `game.js`), so on any map size or camera angle the city always draws over them.
 - **Micro-animations.** All cheap: water glints in the shader, gulls over the Wharf, Ferry Building, and Ocean Beach, the Dutch Windmill's sails turning, and the Sutro Tower beacon blinking.
 - **Kaw.** Silent, gliding a slow loop high over the city, with long pointed wings in a shallow V like Kiran's reference. He doesn't react to clicks or edits (Kiran's call): tiles change the moment a cover meets them.
   - Each change plays its own cloud puff (up to 4×4 tiles per puff) and swaps at the puff's midpoint.
