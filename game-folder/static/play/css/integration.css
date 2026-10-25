@@ -1,0 +1,14 @@
+#sky{background:linear-gradient(#66b9bf,#dff3e5)}
+#loading{z-index:9;pointer-events:none}.topbar{z-index:12}.topbar .tool{white-space:nowrap}.city-badge{max-width:26vw}
+.play-clock{position:fixed;z-index:5;left:20px;bottom:22px;padding:12px 16px;display:flex;align-items:center;gap:16px}.play-clock strong{font-size:28px;font-variant-numeric:tabular-nums}.clock-button,.clock-speed{background:transparent;border:0;cursor:pointer;padding:8px;min-width:38px}.clock-button{position:relative;width:38px;height:38px;display:grid;place-items:center}.clock-glyph{position:absolute;inset:0;display:grid;place-items:center}.clock-glyph svg{width:18px;height:18px}.clock-button .loading-spinner{position:absolute;inset:4px;width:auto;height:auto}.loading-spinner{display:inline-block;width:30px;height:30px;border:2px solid #cbdac5;border-top-color:#365c4b;border-radius:50%;animation:spin 1.2s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+#goal{max-height:calc(100vh - 285px);overflow-y:auto}#goal-result{margin:0;font-weight:600}.goal-rows li{display:flex;justify-content:space-between;gap:14px}.goal-rows .goal-status{flex:none}.goal-status[data-state="true"]{color:#3b7d53}.goal-status[data-state="false"]{color:#84357e}
+#legend{left:auto;right:20px;top:82px;bottom:auto;width:250px}.status-key{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.status-key span{display:flex;align-items:center;gap:5px;font-size:13px}.status-key i{width:12px;height:12px;border-radius:3px}.improving{background:#365c19}.stable{background:#ffffdf}.declining{background:#832e80}.unknown{background:#b0b5b0}
+.play-error{position:fixed;z-index:20;top:90px;left:50%;transform:translateX(-50%);max-width:500px;padding:20px}#readout{pointer-events:none;z-index:15;transform:none;max-width:220px}#tray{max-width:calc(100vw - 500px)}.tray-covers{overflow-x:auto}button:disabled{cursor:default;opacity:.5}
+@media(max-width:1000px){.city-badge{display:none}.tools{gap:4px}.tool{padding:8px}.tray-status{display:none}#goal{width:235px}.cover{width:65px}}
+@media(max-width:650px){.tools{top:70px}.goal{top:125px;width:215px}#legend{top:125px}.tray{gap:6px;padding:10px}.cover{width:55px}#goal{max-height:calc(100vh - 330px)}}
+@media(prefers-reduced-motion:reduce){.loading-spinner{animation:none}}
+.performance-ramp{height:10px;border-radius:5px;background:linear-gradient(90deg,#882e7b 0%,#ffffe1 66.6667%,#2c6015 100%)}.performance-range{position:relative;display:flex;justify-content:space-between;margin-top:5px;font-size:12px}.performance-range span:nth-child(2){position:absolute;left:66.6667%;transform:translateX(-50%)}
+
+
+#continue-year{position:absolute;bottom:calc(100% + 12px);left:0;white-space:nowrap}
+@media(max-width:800px){#tray{bottom:110px;max-width:calc(100vw - 40px)}.play-clock{left:20px;bottom:22px}}

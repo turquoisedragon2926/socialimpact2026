@@ -1,8 +1,23 @@
+function appRoute(href){
+  try{
+    const url=new URL(href,location.href);
+    if(url.origin===location.origin&&(url.pathname==='/'||url.pathname===location.pathname)
+        &&/^#(?:(?:scene|compare)\/[^?]+|projects|new)(?:\?.*)?$/.test(url.hash))return url.hash;
+  }catch{}
+  return null;
+}
+
 export function renderMarkdown(text){
-    return DOMPurify.sanitize(marked.parse(text,{gfm:true,breaks:false}),{
+    const template=document.createElement('template');
+    template.innerHTML=DOMPurify.sanitize(marked.parse(text,{gfm:true,breaks:false}),{
       ALLOWED_TAGS:['p','br','strong','em','del','h1','h2','h3','h4','ul','ol','li','blockquote','pre','code','table','thead','tbody','tr','th','td','a','hr'],
       ALLOWED_ATTR:['href','title','align'],ALLOW_DATA_ATTR:false
     });
+    for(const link of template.content.querySelectorAll('a[href]')){
+      const route=appRoute(link.getAttribute('href'));
+      if(route){link.setAttribute('href',route);link.setAttribute('target','_self');}
+    }
+    return template.innerHTML;
   }
 
 // Persistent outside the routed map. Closing it never cancels server-side work.
@@ -13,6 +28,14 @@ export function createAssistantUI({api,post,escapeHtml:esc,context,onMutation,on
   document.body.append(launcher);
   root.innerHTML=`<button id="close-assistant" class="ghost" aria-label="Close assistant">✕</button><section id="assistant-chat"><div id="assistant-messages" aria-live="polite"></div></section><div id="assistant-progress" role="status"></div><form id="assistant-form"><label class="sr-only" for="assistant-input">Message the assistant. Enter sends; Shift+Enter inserts a new line; Escape stops the current response. Use /clear for a new conversation.</label><textarea id="assistant-input" placeholder="Add an airport in northeast corner of the city" required maxlength="16000" rows="2"></textarea></form>`;
   const $=id=>document.getElementById(id),terminal=status=>['complete','failed','cancelled','interrupted'].includes(status);
+  root.addEventListener('click',event=>{
+    if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+    const link=event.target.closest('a[href]');
+    if(!link||!root.contains(link))return;
+    const route=appRoute(link.getAttribute('href'));
+    if(!route)return;
+    event.preventDefault();event.stopPropagation();location.hash=route;
+  });
   let user=null,cid=null,tasks=[],history=[],active=null,timer=null,busy=false,lastHistory='',seen=new Set(),generation=0,refreshing=false,initialized=false,errorMessage='',expanded=false,motion=null;
   function displayHistory(){
     const serialized=JSON.stringify(history);if(serialized===lastHistory)return;lastHistory=serialized;
@@ -59,7 +82,7 @@ export function createAssistantUI({api,post,escapeHtml:esc,context,onMutation,on
   function open(){expanded=true;root.hidden=false;root.inert=false;render();animate(true);$('assistant-input').focus({preventScroll:true});}
   function close(){expanded=false;root.inert=true;render();if(!root.hidden)animate(false);launcher.focus({preventScroll:true});}
   function activate(id){
-    if(user!==id){generation++;user=id;cid=id?localStorage.getItem('land-conversation-'+id):null;history=[];tasks=[];seen=new Set();initialized=false;errorMessage='';lastHistory='';clearInterval(timer);if(id){refresh();timer=setInterval(refresh,1500);}else close();}
+    if(user!==id){generation++;user=id;cid=id?localStorage.getItem('land-conversation-'+id):null;busy=false;active=null;$('assistant-input').value='';history=[];tasks=[];seen=new Set();initialized=false;errorMessage='';lastHistory='';clearInterval(timer);if(id){refresh();timer=setInterval(refresh,1500);}else close();}
     launcher.hidden=!id;launcher.onclick=()=>expanded?close():open();render();
   }
   $('close-assistant').onclick=close;
@@ -77,9 +100,14 @@ export function createAssistantUI({api,post,escapeHtml:esc,context,onMutation,on
     if(active)return;
 
     busy=true;errorMessage='';render();
-    try{const job=await post('/assistant',{message,conversation_id:cid,context:context()});generation++;cid=job.payload.conversation_id;tasks=[job,...tasks.filter(t=>t.id!==job.id)];localStorage.setItem('land-conversation-'+user,cid);$('assistant-input').value='';await refresh();}
-    catch(error){errorMessage=error.message;}
-    finally{busy=false;render();}
+    let requestGeneration=generation;
+    try{
+      const job=await post('/assistant',{message,conversation_id:cid,context:context()});
+      // A workspace switch invalidates pending UI work, even if we switch back later.
+      if(requestGeneration!==generation)return;
+      requestGeneration=++generation;cid=job.payload.conversation_id;tasks=[job,...tasks.filter(t=>t.id!==job.id)];localStorage.setItem('land-conversation-'+user,cid);$('assistant-input').value='';await refresh();
+    }catch(error){if(requestGeneration===generation)errorMessage=error.message;}
+    finally{if(requestGeneration===generation){busy=false;render();}}
   };
   return {activate,open,close,refresh};
 }

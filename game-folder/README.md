@@ -1,4 +1,4 @@
-# phone na hello
+# planIt
 
 A 2D community land-planning sandbox: explore a real place, edit land cover, and compare explicit soil-carbon and NDVI scenarios over time. This is a fresh application; `../GIS/` and the voxel prototype remain separate.
 
@@ -306,3 +306,7 @@ Missing values are excluded and counted, never filled with zero. A mean needs on
 These fields come from the shared backend comparison calculation at the selected year. The agent can inspect selected cell statistics with `compare_designs(cell_ids=...)` and open the maps with `show_view(comparison_field="mean" | "stddev", layer=...)`.
 
 Checks: `uv run pytest tests/test_spatial_comparison.py -q` and `uv run python scripts/spatial_comparison_check.py`. They verify independent cell arithmetic and colors, missing values, reference exclusion, saved snapshots, agent navigation, viewport preservation and desktop/mobile controls.
+
+## Play mode
+
+Open an individual design and choose **Play** at the top right. Pick a character, paint the 3D landscape, and simulate with the same model. **Back to map** returns to the saved design and year. Comparison and the existing map controls remain available in the map view. See [Play integration and checks](static/play/README.md).

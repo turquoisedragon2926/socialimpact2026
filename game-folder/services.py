@@ -134,6 +134,18 @@ class ScenarioService:
             return self._update(item, actions=json.dumps(backup['actions']), selected_year=backup['selected_year'], reset_backup=None)
         return self._update(item, actions=json.dumps(item['actions'][:-1]))
 
+    def reset_play(self, scene_id, body):
+        """Restore a challenge's entry checkpoint without replaying old edits."""
+        item = self.get(scene_id)
+        if body.revision != item['revision']:
+            raise ServiceError(409, 'Scene changed. Reload before resetting the challenge.')
+        count = len(body.action_ids)
+        if [a['id'] for a in item['actions'][:count]] != body.action_ids:
+            raise ServiceError(409, 'Challenge history changed. Reload before resetting.')
+        if body.year < item['baseline']['year']:
+            raise ServiceError(422, 'Year cannot precede the baseline.')
+        return self._update(item, actions=json.dumps(item['actions'][:count]), selected_year=body.year)
+
     def reset(self, scene_id, body: Revision):
         item = self.get(scene_id)
         if body.revision != item['revision']:
@@ -262,7 +274,7 @@ class ScenarioService:
             time.sleep(max(0, 1.1 - (time.monotonic() - LAST_SEARCH)))
             LAST_SEARCH = time.monotonic()
             try:
-                r = httpx.get('https://nominatim.openstreetmap.org/search', params={'q': q, 'format': 'jsonv2', 'limit': 5}, timeout=20, headers={'User-Agent': 'CommonGroundHackathon/0.1 (local educational land-planning prototype)'})
+                r = httpx.get('https://nominatim.openstreetmap.org/search', params={'q': q, 'format': 'jsonv2', 'limit': 5}, timeout=20, headers={'User-Agent': 'planItHackathon/0.1 (local educational land-planning prototype)'})
                 r.raise_for_status()
                 result = [{'name': p['display_name'], 'lat': float(p['lat']), 'lon': float(p['lon'])} for p in r.json()]
             except Exception:

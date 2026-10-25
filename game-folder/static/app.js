@@ -1,7 +1,8 @@
+import {CHALLENGES as PLAY_CHALLENGES} from './play/challenges.js';
 import {createPlayback,renderPlaybackButton} from './playback.js?v=cdb452bd9692';
 import {hideHover} from './hover-ui.js';
 import {loadingState,errorState} from './loading-ui.js';
-import {createAssistantUI} from './assistant-ui.js';
+import {createAssistantUI} from './assistant-ui.js?v=60c37be2219a';
 import {renderComparisonChart} from './comparison-chart.js?v=3c96c8153697';
 const $ = id => document.getElementById(id);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -47,7 +48,7 @@ const climates = {temperate_dry:'Temperate · dry',temperate_moist:'Temperate ·
 const palette = ['#416e51','#b47351','#8c83a5','#718fa1','#b0a05b','#c07080'];
 const S = {user:null, scenes:[], selected:new Set(), scene:null, result:null, baseIndex:new Map(), resultIndex:new Map(), cells:new Map(), layer:'cover', selection:new Set(), busy:false, map:null, playing:false, playback:null, brush:'inspect', pending:new Map(), paintQueue:[], stroke:null, cleanup:null, timelineKey:null, timeline:null, timelineError:false};
 let toastTimer, routeToken=0, paintTask=null, routeController=null;
-const logo = `<a class="logo" href="#projects" aria-label="phone na hello home"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#214f40"/><path d="m6 12 10-6 10 6-10 6z" fill="#dce9ad"/><path d="m6 20 10 6 10-6M6 16l10 6 10-6" fill="none" stroke="#dce9ad" stroke-width="1.6"/></svg>phone na hello<span style="color:#88a367">.</span></a>`;
+const logo = `<a class="logo" href="#projects" aria-label="planIt home"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#214f40"/><path d="m6 12 10-6 10 6-10 6z" fill="#dce9ad"/><path d="m6 20 10 6 10-6M6 16l10 6 10-6" fill="none" stroke="#dce9ad" stroke-width="1.6"/></svg>planIt<span style="color:#88a367">.</span></a>`;
 
 async function api(path, options={}) {
   const r = await fetch(`/api${path}`, {...options, headers:{'Content-Type':'application/json',...options.headers}});
@@ -111,15 +112,28 @@ function renderLogin() {
 async function projects(token) {
   const scenes=await routeApi('/scenes?summary=true');if(token!==routeToken)return;S.scenes=scenes;
   S.selected=new Set([...S.selected].filter(id=>scenes.some(s=>s.id===id)));
-  mount(`<main id="main" class="page"><div class="page-heading"><div><span class="eyebrow">Your landscape, your possibilities</span><h1>Places to make a difference.</h1></div></div><div class="row between sectionbar"><strong>${scenes.length} saved ${scenes.length===1?'scene':'scenes'}</strong></div><section class="cards" aria-label="Saved scenes">${scenes.map(s=>`<article class="card ${S.selected.has(s.id)?'selected':''}" data-card="${s.id}"><div class="card-preview"><img src="/api/scenes/${s.id}/preview.svg?revision=${s.revision}" alt="Land-cover preview for ${esc(s.name)}" loading="lazy" decoding="async"><label class="select-card"><input type="checkbox" data-select="${s.id}" aria-label="Select ${esc(s.name)} for comparison" ${S.selected.has(s.id)?'checked':''}> Compare</label></div><div class="card-body"><span class="badge ${(s.action_count??s.actions?.length??0)?'warm':''}">${(s.action_count??s.actions?.length??0)?`${(s.action_count??s.actions?.length??0)} ${(s.action_count??s.actions?.length??0)===1?'intervention':'interventions'}`:'Unchanged baseline'}</span><h3><a class="scene-link" href="#scene/${s.id}">${esc(s.name)}</a></h3><p>${esc(s.place)} · ${s.cell_count} cells</p><div class="card-meta"><span>${s.year} → ${s.selected_year}</span></div></div></article>`).join('')}<button class="create-card" id="create-card" aria-label="Create a world"><span class="plus" aria-hidden="true">＋</span></button></section><div id="compare-tray"></div></main>`);
+  mount(`<main id="main" class="page"><div class="page-heading"><div><span class="eyebrow">Your landscape, your possibilities</span><h1>Places to make a difference.</h1></div></div><div class="row between sectionbar"><strong id="scene-count">${scenes.length} saved ${scenes.length===1?'scene':'scenes'}</strong></div><section class="cards" aria-label="Saved scenes">${scenes.map(s=>`<article class="card ${S.selected.has(s.id)?'selected':''}" data-card="${s.id}"><div class="card-preview"><img src="/api/scenes/${s.id}/preview.svg?revision=${s.revision}" alt="Land-cover preview for ${esc(s.name)}" loading="lazy" decoding="async"><label class="select-card"><input type="checkbox" data-select="${s.id}" aria-label="Select ${esc(s.name)} for comparison" ${S.selected.has(s.id)?'checked':''}> Compare</label></div><div class="card-body"><span class="badge ${(s.action_count??s.actions?.length??0)?'warm':''}">${(s.action_count??s.actions?.length??0)?`${(s.action_count??s.actions?.length??0)} ${(s.action_count??s.actions?.length??0)===1?'intervention':'interventions'}`:'Unchanged baseline'}</span><h3><a class="scene-link" href="#scene/${s.id}">${esc(s.name)}</a></h3><p>${esc(s.place)} · ${s.cell_count} cells</p><div class="card-meta"><span>${s.year} → ${s.selected_year}</span><button class="delete-scene" type="button" data-delete="${s.id}" aria-label="Delete ${esc(s.name)}" title="Delete scene"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6m4-6v6"/></svg></button></div></div></article>`).join('')}<button class="create-card" id="create-card" aria-label="Create a world"><span class="plus" aria-hidden="true">＋</span></button></section><div id="compare-tray"></div></main>`);
   $('create-card').onclick=()=>location.hash='#new';
+  document.querySelectorAll('[data-delete]').forEach(button=>button.onclick=async()=>{
+    button.disabled=true;button.setAttribute('aria-busy','true');
+    const id=button.dataset.delete;
+    try{
+      await api(`/scenes/${id}`,{method:'DELETE'});
+      if(token!==routeToken)return;
+      const card=button.closest('.card'),next=card.nextElementSibling?.querySelector('[data-delete]')||card.previousElementSibling?.querySelector('[data-delete]')||$('create-card');
+      const restoreFocus=document.activeElement===button;
+      S.scenes=S.scenes.filter(scene=>scene.id!==id);S.selected.delete(id);card.remove();
+      $('scene-count').textContent=`${S.scenes.length} saved ${S.scenes.length===1?'scene':'scenes'}`;
+      comparisonTray();if(restoreFocus)next.focus();toast('Scene deleted.');
+    }catch(error){if(token===routeToken){button.disabled=false;button.removeAttribute('aria-busy');fail(error);}}
+  });
   document.querySelectorAll('[data-select]').forEach(b=>b.onchange=()=>{if(b.checked)S.selected.add(b.dataset.select);else S.selected.delete(b.dataset.select);document.querySelector(`[data-card="${b.dataset.select}"]`).classList.toggle('selected',b.checked);comparisonTray();});
   comparisonTray();
 }
 function comparisonTray(){
   const count=S.selected.size,chosen=S.scenes.filter(s=>S.selected.has(s.id));
   const compatible=new Set(chosen.map(s=>JSON.stringify([s.baseline_id,s.climate,s.model_version,s.ndvi_model_version]))).size<=1;
-  $('compare-tray').innerHTML=count?`<div class="comparison-tray"><p><strong>${count} selected</strong><br>${compatible?'Compare alternatives from the same starting landscape.':'Choose scenes with the same starting data, climate and model.'}</p><button id="compare-selected" ${count<2||count>12||!compatible?'disabled':''}>Compare scenarios ↗</button></div>`:'';
+  $('compare-tray').innerHTML=count?`<div class="comparison-tray"><p><strong>${count} selected</strong><br>${compatible?'Compare alternatives; an unchanged reference is included automatically.':'Choose scenes with the same starting data, climate and model.'}</p><button id="compare-selected" ${count<2||count>12||!compatible?'disabled':''}>Compare scenarios ↗</button></div>`:'';
   if(count)$('compare-selected').onclick=()=>location.hash=`#compare/${[...S.selected].join(',')}`;
 }
 
@@ -127,6 +141,18 @@ function baseMap(id, bounds){
   const map=L.map(id,{zoomSnap:.25,zoomControl:false,scrollWheelZoom:true,doubleClickZoom:false,boxZoom:false,touchZoom:true,keyboard:true,dragging:true,attributionControl:true});
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
   map.fitBounds(bounds,{padding:[28,65]});
+  // Leaflet watches window resize, but layout/panel changes can resize only the map.
+  const container=map.getContainer();
+  let resizeFrame;
+  const resizeObserver=new ResizeObserver(()=>{
+    cancelAnimationFrame(resizeFrame);
+    resizeFrame=requestAnimationFrame(()=>{
+      if(container.isConnected&&container.clientWidth&&container.clientHeight)
+        map.invalidateSize({animate:false,debounceMoveend:true});
+    });
+  });
+  resizeObserver.observe(container);
+  map.once('unload',()=>{resizeObserver.disconnect();cancelAnimationFrame(resizeFrame);});
   L.control.zoom({position:'bottomright'}).addTo(map);
   L.control.scale({position:'bottomright',imperial:false,maxWidth:100}).addTo(map);
   S.map=map;
@@ -209,7 +235,7 @@ async function newScene(token){
   refresh();
   $('select-city').onclick=()=>selectCity().catch(fail);
   $('recenter-region').onclick=()=>{const c=map.getCenter();moveTo({lat:c.lat,lon:c.lng,name:'Selected region'});};
-  $('region-info').onclick=()=>dialog('Starting data',`<p>WorldCover land cover and matching annual NDVI composites: 2020 or 2021, at 10 m. Decision cells use a 145 m grid for rectangles or a 165 m grid for the San Francisco neighborhood footprint.</p><p>Soil carbon uses SoilGrids estimates at 250 m, without a single observation year. Missing data stays unknown.</p><p>Play the clock to model soil-carbon and vegetation responses after your edits. Observed NDVI stays available in cell details.</p>`);
+  $('region-info').onclick=()=>dialog('Starting data',`<p>WorldCover land cover and matching annual NDVI composites: 2020 or 2021, at 10 m. New scenes use a 165 m decision grid; cells at the region boundary are clipped.</p><p>Soil carbon uses SoilGrids estimates at 250 m, without a single observation year. Missing data stays unknown.</p><p>Play the clock to model soil-carbon and vegetation responses after your edits. Observed NDVI stays available in cell details.</p>`);
   $('region-settings').onclick=()=>{
     const b=citySelected?[cityBoundary.getBounds().getWest(),cityBoundary.getBounds().getSouth(),cityBoundary.getBounds().getEast(),cityBoundary.getBounds().getNorth()]:coordinates();
     dialog('Region settings',`<form id="region-form"><label for="climate">Climate assumption</label><select id="climate">${Object.entries(climates).map(([v,n])=>`<option value="${v}" ${v===climate?'selected':''}>${n}</option>`).join('')}</select><p>Used for soil-carbon transitions involving cropland. Check it for your location.</p><div class="bounds-fields">${['West','South','East','North'].map((n,i)=>`<label>${n}<input id="bound-${i}" type="number" step="any" value="${b[i]}" required></label>`).join('')}</div><button class="primary">Use region</button></form>`);
@@ -247,7 +273,7 @@ async function openScene(id,token,params=new URLSearchParams()){
   const b=scene.baseline;
   S.layer=canonicalLayer(params.get('layer')||S.layer);
   S.brush='inspect';S.pending.clear();S.paintQueue=[];
-  mount(`<main id="main" class="workspace paint-workspace floating-workspace design-workspace"><section class="map-column" aria-label="Scenario map"><h1 id="scene-title" class="sr-only">${esc(scene.name)}</h1><span id="save-status" class="sr-only">Saved</span><div class="map-area"><div id="map" class="map" role="region" aria-label="Hover for cell details. Select a brush, then click or drag to paint."></div><a class="design-back" href="#projects" aria-label="Back to projects" title="Back to projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg></a><div class="brush-toolbar" role="toolbar" aria-label="Land-cover brushes">${Object.keys(names).filter(k=>k!=='unknown').map(k=>`<button data-brush="${k}" style="--brush-color:${colors[k]}" aria-label="Paint ${names[k]}" aria-pressed="false" data-tooltip="${names[k]}">${brushIcon(k)}</button>`).join('')}</div><div class="map-compass">N<br><strong>↑</strong></div><div class="map-view-control"><div class="layer-tiles" role="group" aria-label="Map layers">${mapLayers.map(([v,n])=>`<button data-layer="${v}" aria-label="${n}" data-tooltip="${n}" aria-pressed="${S.layer===v}">${layerIcon(v)}</button>`).join('')}</div></div><button id="evidence" class="map-info-button" aria-label="Sources and model assumptions" title="Sources & model assumptions">${regionIcon('info')}</button><section class="comparison-summary design-summary" aria-label="Design metrics"><div id="simulation-metrics" aria-live="off"></div><div id="legend" class="legend panel-legend"></div></section><section class="comparison-clock simulation-dock" aria-label="Simulation clock"><div class="row"><button id="play-simulation" class="clock-button" aria-label="Play simulation">▶</button><input id="simulation-year" aria-label="Simulation year" type="number" min="${b.year}" step="1" value="${viewYear}"><span id="year-label" class="sr-only">${viewYear}</span><span id="clock-state" class="sr-only">Paused</span><button id="simulation-speed" class="clock-speed" type="button">1×</button><button id="reset-baseline" class="ghost small" aria-label="Reset design" title="Restore original land cover and year">↺ Reset</button></div></section></div></section></main>`,{navigation:false});
+  mount(`<main id="main" class="workspace paint-workspace floating-workspace design-workspace"><section class="map-column" aria-label="Scenario map"><h1 id="scene-title" class="sr-only">${esc(scene.name)}</h1><span id="save-status" class="sr-only">Saved</span><div class="map-area"><div id="map" class="map" role="region" aria-label="Hover for cell details. Select a brush, then click or drag to paint."></div><a class="design-back" href="#projects" aria-label="Back to projects" title="Back to projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg></a><div class="brush-toolbar" role="toolbar" aria-label="Land-cover brushes">${Object.keys(names).filter(k=>k!=='unknown').map(k=>`<button data-brush="${k}" style="--brush-color:${colors[k]}" aria-label="Paint ${names[k]}" aria-pressed="false" data-tooltip="${names[k]}">${brushIcon(k)}</button>`).join('')}</div><div class="map-compass">N<br><strong>↑</strong></div><div class="map-view-control"><div class="layer-tiles" role="group" aria-label="Map layers">${mapLayers.map(([v,n])=>`<button data-layer="${v}" aria-label="${n}" data-tooltip="${n}" aria-pressed="${S.layer===v}">${layerIcon(v)}</button>`).join('')}</div></div><button id="open-play" class="map-play-button" aria-label="Play this design" title="Play this design">▶ Play</button><button id="evidence" class="map-info-button" aria-label="Sources and model assumptions" title="Sources & model assumptions">${regionIcon('info')}</button><section class="comparison-summary design-summary" aria-label="Design metrics"><div id="simulation-metrics" aria-live="off"></div><div id="legend" class="legend panel-legend"></div></section><section class="comparison-clock simulation-dock" aria-label="Simulation clock"><div class="row"><button id="play-simulation" class="clock-button" aria-label="Play simulation">▶</button><input id="simulation-year" aria-label="Simulation year" type="number" min="${b.year}" step="1" value="${viewYear}"><span id="year-label" class="sr-only">${viewYear}</span><span id="clock-state" class="sr-only">Paused</span><button id="simulation-speed" class="clock-speed" type="button">1×</button><button id="reset-baseline" class="ghost small" aria-label="Reset design" title="Restore original land cover and year">↺ Reset</button></div></section></div></section></main>`,{navigation:false});
   if(params.get('focus'))S.selection=new Set(params.get('focus').split(',').filter(id=>S.baseIndex.has(id)));
   const view=params.get('focus')?focusExtent(b,new Set(params.get('focus').split(','))).bounds:b.bounds;
   const map=baseMap('map',latBounds(view));
@@ -276,7 +302,7 @@ async function openScene(id,token,params=new URLSearchParams()){
       if(location.hash.split('?')[0]!==`#scene/${id}`)return;
       chooseBrush('inspect');
       await mutate(()=>post(`/scenes/${id}/reset`,{revision:S.scene.revision}));
-    }finally{if(S.scene?.id===id){S.resetting=false;updateClock();}}
+    }finally{if(token===routeToken&&S.scene?.id===id){S.resetting=false;updateClock();}}
   };
   S.playback=createPlayback({
     onChange:playing=>{S.playing=playing;updateClock();},
@@ -284,7 +310,7 @@ async function openScene(id,token,params=new URLSearchParams()){
     step:async()=>{
       const id=S.scene.id,year=S.result.year+1;
       await mutate(()=>api(`/scenes/${id}`,{method:'PATCH',body:JSON.stringify({revision:S.scene.revision,selected_year:year})}));
-      if(S.scene?.id===id&&S.result?.year!==year)pauseSimulation();
+      if(token===routeToken&&S.scene?.id===id&&S.result?.year!==year)pauseSimulation();
     }
   });
   const cleanupDesign=S.cleanup,playback=S.playback;
@@ -292,25 +318,43 @@ async function openScene(id,token,params=new URLSearchParams()){
   playback.bindSpeed($('simulation-speed'));
   $('play-simulation').onclick=()=>{chooseBrush('inspect');playback.toggle();};
   $('simulation-year').onchange=()=>jumpToYear(Number($('simulation-year').value));
+  $('open-play').onclick=async()=>{
+    await S.playback.pauseAndWait();
+    if(paintTask)await paintTask;
+    if(token!==routeToken)return;
+    if(S.busy||S.stroke){toast('Wait for the current edit to finish.');return;}
+    dialog('Choose a character',`<div class="play-characters">${PLAY_CHALLENGES.map(c=>`<button class="play-character" data-character="${c.id}"><img src="/static/play/portraits/${c.id}.png" alt="${c.species}"><strong>${c.name}</strong><span class="play-challenge-title">${c.title}</span><span>${c.description}</span></button>`).join('')}</div>`);
+    document.querySelectorAll('[data-character]').forEach(button=>button.onclick=()=>{
+      const params=new URLSearchParams({scene:S.scene.id,year:String(S.result.year),character:button.dataset.character,layer:S.layer});
+      location.href=`/static/play/index.html?${params}`;
+    });
+  };
   $('evidence').onclick=showEvidence;
   updateView();
 }
 async function jumpToYear(year){
+  const token=routeToken;
   if(S.busy||S.stroke){$('simulation-year').value=S.result.year;return;}
   if(!Number.isInteger(year)||year<S.scene.baseline.year){
     $('simulation-year').value=S.result.year;toast('Choose a whole year at or after the baseline.');return;
   }
   pauseSimulation();
   await mutate(()=>api(`/scenes/${S.scene.id}`,{method:'PATCH',body:JSON.stringify({revision:S.scene.revision,selected_year:year})}));
-  if($('simulation-year'))$('simulation-year').value=S.result.year;
+  if(token===routeToken&&$('simulation-year'))$('simulation-year').value=S.result.year;
 }
 async function mutate(operation){
   if(S.busy)return;S.busy=true;
-  const id=S.scene.id;
+  const id=S.scene.id,token=routeToken;
   setBusy(true);
-  try{await operation();const scene=await api(`/scenes/${id}`);const result=await api(`/scenes/${id}/evaluate?year=${scene.selected_year}`);if(location.hash.split('?')[0]!==`#scene/${id}`)return;S.scene=scene;S.result=result;const params=new URLSearchParams(location.hash.split('?')[1]||'');if(params.has('year')){params.set('year',scene.selected_year);history.replaceState(null,'',`#scene/${id}?${params}`);}updateView();$('save-status').textContent='All changes saved';}
-  catch(err){fail(err);if($('save-status'))$('save-status').textContent='Change not saved · reload if the scene changed elsewhere';}
-  finally{S.busy=false;if(location.hash.split('?')[0]===`#scene/${id}`)setBusy(false);}
+  try{
+    await operation();if(token!==routeToken)return;
+    const scene=await api(`/scenes/${id}`);if(token!==routeToken)return;
+    const result=await api(`/scenes/${id}/evaluate?year=${scene.selected_year}`);if(token!==routeToken)return;
+    S.scene=scene;S.result=result;const params=new URLSearchParams(location.hash.split('?')[1]||'');
+    if(params.has('year')){params.set('year',scene.selected_year);history.replaceState(null,'',`#scene/${id}?${params}`);}
+    updateView();$('save-status').textContent='All changes saved';
+  }catch(err){if(token===routeToken){fail(err);if($('save-status'))$('save-status').textContent='Change not saved · reload if the scene changed elsewhere';}}
+  finally{if(token===routeToken){S.busy=false;setBusy(false);}}
 }
 function setBusy(value){
   if(value)$('save-status').textContent='Saving…';
@@ -769,7 +813,7 @@ async function route(){
   S.timelineController?.abort();S.timelineKey=null;
   if(paintTask)await paintTask;
   if(token!==routeToken)return;
-  S.comparison=null;S.selection.clear();S.scene=null;S.result=null;
+  S.comparison=null;S.selection.clear();S.scene=null;S.result=null;S.busy=false;S.resetting=false;
   if(!S.user){renderLogin();return;}
   const [hashPath,query='']=(location.hash.slice(1)||'projects').split('?');
   const [path,part]=hashPath.split('/');

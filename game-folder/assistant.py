@@ -13,7 +13,7 @@ from agent_tools import build_tools
 from jobs import Cancelled
 from services import ServiceError
 
-SYSTEM_PROMPT = """You are the Common Ground land-planning assistant, operating the user's application.
+SYSTEM_PROMPT = """You are the planIt land-planning assistant, operating the user's application.
 Use the supplied tools to carry out requests, not merely describe what you could do.
 You have the same scenario capabilities as the user, including creating projects/designs and
 editing existing designs. There is no default optimization objective, protected land-cover rule,

@@ -49,15 +49,15 @@ with tempfile.TemporaryDirectory() as runtime:
    held[0].abort()
    page.locator(f'.scene-link[href="#scene/{sid}"]').click()
    expect(page.locator('#year-label')).to_have_text('2309')
-   expect(page.locator('.metric-graph')).to_be_visible(timeout=30000)
-   expect(page.locator('#simulation-metrics')).to_contain_text('Sampled history')
+   expect(page.locator('.comparison-timeline')).to_be_visible(timeout=30000)
+   expect(page.locator('.comparison-timeline')).to_have_attribute('aria-valuemax','2309')
    # Playback adds the exact next result without re-fetching sampled historical gaps.
    timeline_count=sum('/timeline?' in url for url in requests)
    page.locator('#play-simulation').click()
    expect(page.locator('#year-label')).to_have_text('2310',timeout=10000)
    page.locator('#play-simulation').click()
    assert sum('/timeline?' in url for url in requests)==timeline_count
-   for kind in ['ndvi','trajectory','cover']:page.locator(f'[data-layer="{kind}"]').click()
+   for kind in ['ndvi','performance','cover']:page.locator(f'[data-layer="{kind}"]').click()
    page.locator('a[href="#projects"]').first.click()
    expect(page.locator('.card')).to_have_count(11)
    page.set_viewport_size({'width':390,'height':844})

@@ -16,9 +16,10 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 import model
+import play
 from services import ScenarioService, ServiceError
 from schemas import NewScene, ScenePatch, Action, Revision, Clone, Compare
-from schemas import AssistantRequest, CompareTimeline
+from schemas import AssistantRequest, CompareTimeline, PlayReset
 from jobs import JobManager
 import assistant
 from sources import validate_bounds, ROOT
@@ -74,7 +75,7 @@ async def lifespan(app):
     app.state.jobs.close()
 
 
-app = FastAPI(title="Common Ground", lifespan=lifespan)
+app = FastAPI(title="planIt", lifespan=lifespan)
 
 @app.exception_handler(ServiceError)
 async def service_error(request, exc):
@@ -244,6 +245,11 @@ def reset_scene(scene_id: str, body: Revision, request: Request):
     return ScenarioService(db, current_user(request)["id"]).reset(scene_id, body)
 
 
+@app.post("/api/scenes/{scene_id}/play-reset")
+def reset_play(scene_id: str, body: PlayReset, request: Request):
+    return ScenarioService(db, current_user(request)["id"]).reset_play(scene_id, body)
+
+
 @app.post("/api/scenes/{scene_id}/clone")
 def clone(scene_id: str, request: Request, reset: bool = False, body: Clone | None = None):
     return ScenarioService(db, current_user(request)["id"]).clone(scene_id, reset, body)
@@ -257,6 +263,11 @@ def delete(scene_id: str, request: Request):
 @app.get("/api/scenes/{scene_id}/timeline")
 def timeline(scene_id: str, request: Request, start_year: int | None = None, end_year: int | None = None, max_points: int | None = None):
     return ScenarioService(db, current_user(request)["id"]).timeline(scene_id, start_year, end_year, max_points)
+
+
+@app.get("/api/scenes/{scene_id}/play-map")
+def play_map(scene_id: str, request: Request, year: int | None = None):
+    return play.scene_map(get_scene(scene_id, current_user(request)['id']), year)
 
 
 @app.get("/api/scenes/{scene_id}/evaluate")

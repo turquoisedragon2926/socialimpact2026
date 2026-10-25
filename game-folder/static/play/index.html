@@ -1,0 +1,19 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Play · Land planning</title>
+<link rel="stylesheet" href="css/planit.css"><link rel="stylesheet" href="css/integration.css">
+<script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/"}}</script></head><body>
+<div id="sky"></div><div id="stage"></div>
+<div id="loading" class="loading" role="status">Loading your design…</div>
+<header class="topbar"><button class="tool" id="back-map">← Back to map</button><span class="city-badge" id="city-name"></span></header>
+<div id="hud" hidden>
+<nav class="tools" aria-label="Game tools"><button class="tool" id="health-btn" aria-pressed="false">Land health</button><button class="tool" id="reset-challenge" aria-label="Reset challenge">Reset</button><button class="tool" id="sound-btn" aria-pressed="false">Sound off</button></nav>
+<aside class="goal panel" id="goal"><div class="goal-head"><img id="goal-face" alt=""><div><span class="eyebrow" id="goal-who"></span><h2 id="goal-title"></h2></div></div><ul class="goal-rows" id="goal-rows"></ul><p id="goal-result" role="status"></p></aside>
+<aside class="legend panel" id="legend" hidden><strong>Land health</strong><p class="note">Productivity performance · ×</p><div class="performance-ramp"></div><div class="performance-range"><span>0</span><span>1×</span><span>1.5+</span></div></aside>
+<section class="play-clock panel" aria-label="Simulation"><button id="clock-play" class="clock-button" aria-label="Play simulation">▶</button><strong id="year"></strong><button id="speed" class="clock-speed">1×</button><button id="continue-year" class="btn" hidden></button></section>
+<section class="tray panel" id="tray" aria-label="Land cover tray"><button id="tray-toggle" class="tray-toggle" aria-expanded="true">Hide tiles</button><div class="tray-status"><strong id="sel-count">Pick a cover</strong><span id="sel-hint">Click or drag tiles to paint.</span><button class="link" id="clear-btn" hidden>Clear selection</button></div><div class="tray-covers" id="covers" role="radiogroup" aria-label="Land cover"></div></section>
+<div class="readout" id="readout" hidden></div>
+</div><div id="error" class="panel play-error" role="alert" hidden><p id="error-message"></p><button class="btn" id="retry">Reload saved design</button></div>
+<script type="module">
+import('./js/entry.js').catch(error=>{document.getElementById('loading').hidden=true;document.getElementById('error').hidden=false;document.getElementById('error-message').textContent=error.message;});
+document.getElementById('retry').onclick=()=>location.reload();
+document.getElementById('back-map').onclick=()=>{const id=new URLSearchParams(location.search).get('scene');location.href=id?`/#scene/${encodeURIComponent(id)}`:'/#projects';};
+</script></body></html>

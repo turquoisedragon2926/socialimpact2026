@@ -2,6 +2,7 @@
 import json
 import os
 import re
+import socket
 from pathlib import Path
 import subprocess
 import tempfile
@@ -10,11 +11,14 @@ import urllib.request
 from playwright.sync_api import sync_playwright, expect
 
 ROOT=Path(__file__).resolve().parents[1]
-URL='http://127.0.0.1:8782'
+with socket.socket() as port_socket:
+    port_socket.bind(('127.0.0.1',0));PORT=port_socket.getsockname()[1]
+URL=f'http://127.0.0.1:{PORT}'
 with tempfile.TemporaryDirectory() as runtime:
-    process=subprocess.Popen([str(ROOT/'.venv/bin/python'),'-m','uvicorn','server:app','--port','8782'],cwd=ROOT,env={**os.environ,'LAND_RUNTIME':runtime},stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    process=subprocess.Popen([str(ROOT/'.venv/bin/python'),'-m','uvicorn','server:app','--port',str(PORT)],cwd=ROOT,env={**os.environ,'LAND_RUNTIME':runtime},stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
     try:
         for _ in range(100):
+            if process.poll() is not None:raise RuntimeError('Isolated QA server exited')
             try:
                 urllib.request.urlopen(URL,timeout=1);break
             except Exception:time.sleep(.1)
@@ -36,11 +40,11 @@ with tempfile.TemporaryDirectory() as runtime:
             expect(page.locator('#play-simulation')).to_be_visible()
             assert page.locator('#year-slider').count()==0
             assert page.locator('#map-layer').count()==0
-            for layer in ('cover','ndvi','soc','change'):
+            for layer in ('cover','ndvi','soc','performance','degradation'):
                 button=page.locator(f'[data-layer="{layer}"]')
                 button.click()
                 expect(button).to_have_attribute('aria-pressed','true')
-                expect(page.locator('.metric-graph')).to_be_visible()
+                expect(page.locator('.comparison-timeline')).to_be_visible()
             page.locator('[data-layer="cover"]').click()
             assert 'coverage' not in page.locator('#simulation-metrics').inner_text()
             assert 'Paint a change' not in page.locator('#simulation-metrics').inner_text()
@@ -55,7 +59,7 @@ with tempfile.TemporaryDirectory() as runtime:
                 return out
             cells=points();a,b,c=cells[len(cells)//2:len(cells)//2+3]
             page.mouse.move(a[0],a[1])
-            expect(page.locator('.leaflet-tooltip')).to_contain_text('NDVI')
+            expect(page.locator('.leaflet-tooltip')).to_contain_text('2021')
             # A missed SVG mouseout must never leave multiple cell tooltips open.
             for x,y,cell_id in [b,c]:
                 page.locator(f'[data-cell="{cell_id}"]').dispatch_event('mouseover',{'clientX':x,'clientY':y})
@@ -80,9 +84,9 @@ with tempfile.TemporaryDirectory() as runtime:
             assert page.locator('.map-toolbar').count()==0
             dock=page.locator('.simulation-dock').bounding_box()
             assert 10 <= dock['x'] <= 25
-            page.locator('[data-layer="change"]').click()
+            page.locator('[data-layer="soc"]').click()
             fills=page.locator('[data-cell]').evaluate_all('(cells)=>cells.map(c=>c.getAttribute("fill"))')
-            assert '#ffffe1' in fills and set(fills)<= {'#ffffe1','#d9dcd6'}
+            assert any(fill!='#d9dcd6' for fill in fills)
             page.locator('[data-layer="cover"]').click()
 
             held=[]
@@ -126,16 +130,16 @@ with tempfile.TemporaryDirectory() as runtime:
             # The live clock advances the model and pulses only during playback.
             page.locator('#play-simulation').click()
             expect(page.locator('#clock-state')).to_have_text('Running')
-            assert page.locator('.clock-button').evaluate('e=>getComputedStyle(e).animationName')=='clock-breathe'
+            expect(page.locator('#play-simulation .loading-spinner')).to_be_visible()
             page.screenshot(path=str(ROOT/'test-results/11-live-clock.png'),full_page=True)
             page.emulate_media(reduced_motion='reduce')
             assert page.locator('.clock-button').evaluate('e=>getComputedStyle(e).animationName')=='none'
             page.emulate_media(reduced_motion='no-preference')
             expect(page.locator('#year-label')).to_have_text('2022',timeout=5000)
-            expect(page.locator('.metric-graph')).to_have_attribute('aria-label', re.compile('2021 to 2022'))
-            assert 'Z' in page.locator('.graph-area').get_attribute('d')
-            assert page.locator('.graph-tip').get_attribute('cx')=='314'
-            assert page.locator('.graph-halo').evaluate('e=>getComputedStyle(e).animationName')=='graph-pulse'
+            expect(page.locator('.comparison-timeline')).to_have_attribute('aria-valuemax','2022')
+            assert 'L' in page.locator('.timeline-design').get_attribute('d')
+            expect(page.locator('.comparison-timeline')).to_have_attribute('aria-valuenow','2022')
+            expect(page.locator('.timeline-cursor')).to_have_count(1)
             page.locator('#play-simulation').click()
             expect(page.locator('#clock-state')).to_have_text('Paused')
             assert page.locator('.simulation-dock.running').count()==0
@@ -168,9 +172,9 @@ with tempfile.TemporaryDirectory() as runtime:
             page.locator('#play-simulation').click()
             expect(page.locator('#year-label')).to_have_text('2062',timeout=10000)
             page.locator('#play-simulation').click()
-            expect(page.locator('.metric-graph')).to_have_attribute('aria-label',re.compile('2021 to 2062'),timeout=15000)
-            assert 'Z' in page.locator('.graph-area').get_attribute('d')
-            assert page.locator('.graph-years').inner_text().split()==['2021','2062']
+            expect(page.locator('.comparison-timeline')).to_have_attribute('aria-valuemax','2062',timeout=15000)
+            assert 'L' in page.locator('.timeline-design').get_attribute('d')
+            expect(page.locator('.comparison-timeline')).to_have_attribute('aria-valuemin','2021')
             page.set_viewport_size({'width':1440,'height':1000})
             page.screenshot(path=str(ROOT/'test-results/12-open-timeline.png'),full_page=True)
             assert not errors,errors

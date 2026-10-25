@@ -42,6 +42,10 @@ class Action(BaseModel):
 class Revision(BaseModel):
     revision: int
 
+class PlayReset(Revision):
+    action_ids: list[str] = Field(max_length=15000)
+    year: int
+
 class Clone(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=100)
 
