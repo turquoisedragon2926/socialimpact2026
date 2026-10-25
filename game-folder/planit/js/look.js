@@ -1,6 +1,6 @@
 // look.js
 // Everything around the city that sets the mood: lights, the sky gradient,
-// drifting low-poly clouds, gulls, and the small landmark animations (the
+// drifting low-poly clouds below the island, gulls, and the small landmark animations (the
 // windmill's sails, Sutro Tower's beacon). All of it is cheap: clouds are one
 // InstancedMesh, gulls a handful of tiny meshes, and none of it is pickable.
 
@@ -73,8 +73,13 @@ export function createClouds(scene, { span, floorY, seed = 7 }) {
       });
     }
   };
-  add(14, 0.5, 0.78, floorY - 3.5, floorY + 1.2, 2.2, 4.2); // around the island's base
-  add(7, 0.62, 0.95, 9, 15, 1.8, 3.4);                      // high, at the edges of the view
+  // Every cloud stays below the island (Kiran): none ever passes through the city.
+  add(14, 0.3, 0.8, floorY - 4.5, floorY - 1.5, 2.2, 4.2); // just under the island's base
+  add(7, 0.55, 0.95, floorY - 9, floorY - 5, 2.4, 4.4);    // deeper and farther out
+  for (const c of clouds) {
+    const top = Math.max(...c.puffs.map((p) => p.y + p.s * 0.78)) + 0.25; // highest puff, plus the bob
+    c.y = Math.min(c.y, floorY - 0.4 - top);
+  }
   const total = clouds.reduce((n, c) => n + c.puffs.length, 0);
   const mesh = new THREE.InstancedMesh(geo, mat, total);
   mesh.frustumCulled = false;
