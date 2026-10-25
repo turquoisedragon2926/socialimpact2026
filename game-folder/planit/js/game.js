@@ -47,6 +47,9 @@ function newDesc(i, code) {
   return { code, variant: Math.floor(h * 8), style: null, height: 0 };
 }
 
+// Clouds render in their own pass before the city, so the city always draws over them.
+const CLOUD_LAYER = 1;
+
 const ease = (x) => (x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2);
 
 // Hand-built landmarks only exist for San Francisco: keep the ones inside this map.
@@ -163,6 +166,8 @@ export function createGame({ container, data: raw, audio = null, hud }) {
 
   // ---------- atmosphere ----------
   const clouds = createClouds(scene, { span, floorY: world.floor });
+  clouds.mesh.layers.set(CLOUD_LAYER);
+  scene.traverse((o) => { if (o.isLight) o.layers.enable(CLOUD_LAYER); });
   const gullSpots = shoreSpots(data).map(([row, col]) => new THREE.Vector3(col + 0.5 - data.cols / 2, 0.4, row + 0.5 - data.rows / 2));
   const gulls = createGulls(scene, { spots: gullSpots });
 
@@ -569,7 +574,16 @@ export function createGame({ container, data: raw, audio = null, hud }) {
     // Shadows cover what's in view.
     const half = Math.min(span * 0.72, Math.max(8, ((camera.right - camera.left) / camera.zoom) * 0.62));
     lights.fit(half > span * 0.6 ? new THREE.Vector3() : controls.target, half);
+    // Clouds first, then the depth buffer is cleared and the city drawn on top:
+    // whatever the map's size or the camera angle, a cloud can never cover the city.
+    renderer.autoClear = false;
+    renderer.clear();
+    camera.layers.set(CLOUD_LAYER);
     renderer.render(scene, camera);
+    renderer.clearDepth();
+    camera.layers.set(0);
+    renderer.render(scene, camera);
+    renderer.autoClear = true;
     fps.frames++; fps.t += dt;
     if (fps.t > 1) {
       fps.value = fps.frames / fps.t; fps.frames = 0; fps.t = 0;

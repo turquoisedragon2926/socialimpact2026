@@ -43,8 +43,8 @@ export function addLights(scene, span) {
 }
 
 // ---------- clouds ----------
-// Puffy low-poly clouds: a ring of them hugging the island's base (like the
-// sky-backdrop reference) plus a few high ones drifting around the outside.
+// Puffy low-poly clouds in two rings below the island, one just under its rim
+// and one deeper and farther out.
 // They circle the island very slowly, so the loop is never noticeable.
 export function createClouds(scene, { span, floorY, seed = 7 }) {
   const rng = makeRng(seed);
@@ -74,8 +74,10 @@ export function createClouds(scene, { span, floorY, seed = 7 }) {
     }
   };
   // Every cloud stays below the island (Kiran): none ever passes through the city.
-  add(14, 0.3, 0.8, floorY - 4.5, floorY - 1.5, 2.2, 4.2); // just under the island's base
-  add(7, 0.55, 0.95, floorY - 9, floorY - 5, 2.4, 4.4);    // deeper and farther out
+  // The rings start outside a square map's corners (0.71 x span), and game.js also
+  // draws clouds in a pass under the city, so no map shape or camera angle puts one on top.
+  add(14, 0.8, 1.05, floorY - 4.5, floorY - 1.5, 2.2, 4.2); // just under the island's rim
+  add(7, 0.9, 1.2, floorY - 9, floorY - 5, 2.4, 4.4);       // deeper and farther out
   for (const c of clouds) {
     const top = Math.max(...c.puffs.map((p) => p.y + p.s * 0.78)) + 0.25; // highest puff, plus the bob
     c.y = Math.min(c.y, floorY - 0.4 - top);

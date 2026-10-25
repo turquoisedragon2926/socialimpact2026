@@ -18,7 +18,7 @@ URL shortcuts for testing:
 
 - **Change tiles:** pick a tile type in the tray, then click or drag on the map. Tiles change right away. Pick the same type again (or press Esc) to put the brush down.
 - **Or select first:** with no type picked, click or drag to select tiles, then pick a type and they all change. A drag that starts on a selected tile erases the selection instead.
-- **Submit plan:** the official confirmation. It plays the time-lapse, and in a challenge the result follows.
+- **Submit plan:** the official confirmation. It plays the time-lapse, and in a challenge the result follows. The time-lapse panel's Reset goes back to today and turns the map back to its starting view.
 - **Tray:** the "Hide tiles" tab on top (or the T key) collapses it, remembered per browser. The tray stays clear of both bottom corners, and the controls hint sits under the wordmark. It also tucks away while the time-lapse panel is open.
 - **Camera:** right-drag rotates, Shift + right-drag (or middle-drag) pans, and the scroll wheel zooms. WASD also pans.
 - **Shortcuts:** Esc clears the selection and puts the brush down, Ctrl/Cmd+Z undoes, H toggles land health, T hides or shows the tiles, and M mutes.
@@ -86,7 +86,7 @@ Final lines are in `js/challenges.js`, from the "planIt challenge stories" doc. 
 ## Assumptions I made (all easy to change)
 
 - **Roofs.** Gable roofs, rowhouse caps, apartment and mid-rise caps, and half the warehouse roofs now use muted pastels: dusty pink, peach, mint, lavender, butter, and powder blue (`LANDCOVERS[50].colors.roofs`). Towers keep their glass.
-- **Sky.** A fixed CSS gradient behind a transparent canvas. 21 low-poly clouds slowly circle below the island, so none ever passes through the city (Kiran's call): 14 just under its base and 7 deeper and farther out.
+- **Sky.** A fixed CSS gradient behind a transparent canvas. 21 low-poly clouds slowly circle below the island, outside even a square map's corners, so none ever passes through the city (Kiran's call). They also render in their own pass before the city (layer 1 in `game.js`), so on any map size or camera angle the city always draws over them.
 - **Micro-animations.** All cheap: water glints in the shader, gulls over the Wharf, Ferry Building, and Ocean Beach, the Dutch Windmill's sails turning, and the Sutro Tower beacon blinking.
 - **Kaw.** Silent, gliding a slow loop high over the city, with long pointed wings in a shallow V like Kiran's reference. He doesn't react to clicks or edits (Kiran's call): tiles change the moment a cover meets them.
   - Each change plays its own cloud puff (up to 4×4 tiles per puff) and swaps at the puff's midpoint.
