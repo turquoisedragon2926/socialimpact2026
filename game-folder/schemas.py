@@ -1,5 +1,6 @@
 """Validated application inputs, shared by HTTP and agent tools."""
 from pydantic import BaseModel, Field
+from typing import Literal
 
 class EvaluationRequest(BaseModel):
     scene_ids: list[str] = Field(min_length=1, max_length=12)
@@ -12,6 +13,7 @@ class ViewContext(BaseModel):
     selected_cells: list[str] = Field(default_factory=list, max_length=15000)
     year: int | None = None
     layer: str = 'cover'
+    comparison_field: Literal['design','mean','stddev'] = 'design'
     bounds: list[float] | None = Field(default=None, min_length=4, max_length=4)
 
 class AssistantRequest(BaseModel):

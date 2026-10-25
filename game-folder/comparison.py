@@ -26,6 +26,43 @@ def distribution(scenarios):
     return output
 
 
+SPATIAL_FIELDS = {
+    'ndvi': ('ndvi',), 'soc': ('soc',), 'change': ('delta_pct',),
+    'trajectory': ('degradation', 'productivity', 'slope'),
+    'state': ('degradation', 'productivity', 'state_class_change'),
+    'performance': ('degradation', 'productivity', 'performance_ratio'),
+}
+
+
+def spatial_fields(scenarios, checkpoint=lambda: None):
+    """Equal-weight statistics at matching cell IDs, excluding missing values.
+
+    Cover classes are categorical and cannot be averaged. Variation requires at
+    least two values; a single available design does not establish agreement.
+    """
+    designs = [{c['id']: c for c in s['cells']} for s in scenarios]
+    ids = dict.fromkeys(cid for design in designs for cid in design)
+    cells = []
+    for cid in ids:
+        checkpoint()
+        fields = {}
+        for key, path in SPATIAL_FIELDS.items():
+            values = []
+            for design in designs:
+                value = design.get(cid)
+                for part in path:
+                    value = value.get(part) if isinstance(value, dict) else None
+                if isinstance(value, (int, float)) and math.isfinite(value):
+                    values.append(value)
+            n = len(values)
+            fields[key] = {'mean': mean(values) if n else None,
+                           'stddev': pstdev(values) if n >= 2 else None,
+                           'n': n, 'missing': len(designs)-n}
+        cells.append({'id': cid, 'fields': fields})
+    return {'design_count': len(designs), 'cells': cells,
+            'description': 'Cell-by-cell mean and population standard deviation between selected designs at the same year. Reference excluded. Missing values excluded and counted; variation needs at least two values. Not forecast uncertainty.'}
+
+
 def differences(reference, scenario, baseline):
     before, after = reference['metrics'], scenario['metrics']
     def delta(key):

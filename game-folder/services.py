@@ -235,6 +235,7 @@ def compare_snapshots(items, year, checkpoint=lambda: None):
         return {'year': year, 'baseline': first['baseline'], 'reference': reference,
                 'reference_description': 'No interventions at the same year, baseline and climate. Modeled scenario contrasts, not empirical causal effects.',
                 'scenes': scenarios, 'distribution': comparison.distribution(scenarios),
+                'spatial_fields': comparison.spatial_fields(scenarios, checkpoint),
                 'distribution_description': 'Equal weight per selected design. Min/max and population standard deviation describe variation between designs, not model uncertainty. Unknown values are excluded and counted.'}
     except ValueError as exc:
         raise ServiceError(422, str(exc)) from exc

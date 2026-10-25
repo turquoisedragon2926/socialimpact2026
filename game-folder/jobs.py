@@ -7,6 +7,7 @@ import time
 from uuid import uuid4
 
 from services import ServiceError, compare_snapshots
+from comparison import spatial_fields
 
 TERMINAL = {'complete', 'failed', 'cancelled', 'interrupted'}
 
@@ -112,6 +113,10 @@ class JobManager:
             if key in result:
                 result[key] = json.loads(result[key]) if result[key] else None
         result.pop('user_id')
+        if include_result and result['kind']=='evaluation' and result.get('result'):
+            for evaluation in result['result'].get('evaluations', []):
+                if 'spatial_fields' not in evaluation:
+                    evaluation['spatial_fields'] = spatial_fields(evaluation['scenes'])
         return result
 
     def list(self, user_id):

@@ -117,14 +117,18 @@ def build_tools(service, jobs, context):
         return {'id': scene_id, 'deleted': True, **service.delete(scene_id)}
 
     @exposed()
-    def compare_designs(scene_ids: list[str], year: int) -> dict:
+    def compare_designs(scene_ids: list[str], year: int, cell_ids: list[str] | None = None) -> dict:
         """Compute same-year metrics, reference differences and between-design distributions.
 
         Requires 2–12 designs with identical baseline, climate and model versions.
         Does not change designs or their displayed years. Returns a comparison link.
+        Optional cell_ids returns spatial mean/stddev for up to 250 selected cells; otherwise only spatial metadata is returned.
         """
         result = service.compare(Compare(scene_ids=scene_ids,year=year))
-        return {k:v for k,v in result.items() if k not in ('baseline','reference','scenes')} | {
+        spatial=result['spatial_fields']
+        selected=set((cell_ids or [])[:250])
+        return {k:v for k,v in result.items() if k not in ('baseline','reference','scenes','spatial_fields')} | {
+            'spatial_fields': {**spatial, 'cells': [c for c in spatial['cells'] if c['id'] in selected]},
             'reference_metrics': result['reference']['metrics'],
             'designs': [{k:v for k,v in s.items() if k not in ('cells','ndvi_model','degradation_model')} for s in result['scenes']],
             'url': '#compare/'+','.join(scene_ids)+'?year='+str(year)}
@@ -167,20 +171,24 @@ def build_tools(service, jobs, context):
 
     @exposed()
     def show_view(scene_id: str | None = None, scene_ids: list[str] | None = None,
-                  layer: str = 'cover', year: int | None = None, cell_ids: list[str] | None = None) -> dict:
+                  layer: str = 'cover', year: int | None = None, cell_ids: list[str] | None = None,
+                  comparison_field: Literal['design','mean','stddev'] = 'design') -> dict:
         """Request a map/design/comparison view and optional cell focus, using existing UI controls.
 
-        Supported layers: cover, ndvi, soc, change, trajectory, state, performance.
+        Supported layers: cover, ndvi (vegetation), soc (soil carbon), degradation.
+        For numeric comparisons, comparison_field selects a design, spatial mean, or spatial standard deviation.
         Does not edit the design. Links are also available for the user to open later.
         """
-        if layer not in ('cover','ndvi','soc','change','trajectory','state','performance'):
+        if layer not in ('cover','ndvi','soc','degradation'):
             raise ValueError('Unsupported map layer.')
         ids = scene_ids or ([scene_id] if scene_id else [])
+        if comparison_field!='design' and (len(ids)<2 or layer not in ('ndvi','soc')):
+            raise ValueError('Spatial mean/variation requires at least two designs and a numeric layer.')
         items = service.snapshots(ids)
         y = year if year is not None else items[0]['selected_year']
         if y < items[0]['baseline']['year']:
             raise ValueError('Year precedes baseline.')
-        url = ('#compare/'+','.join(ids) if len(ids)>1 else '#scene/'+ids[0])+f'?layer={layer}&year={y}'
+        url = ('#compare/'+','.join(ids) if len(ids)>1 else '#scene/'+ids[0])+f'?layer={layer}&year={y}&field={comparison_field}'
         if cell_ids:
             from urllib.parse import quote
             url += '&focus='+quote(','.join(cell_ids))

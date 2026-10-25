@@ -20,10 +20,19 @@ const numericLayers = {
   state:{label:'Productivity state',field:'state_class_change',metric:'productivity_state_class_change',unit:' ranks',digits:2,min:-9,mid:0,max:9,help:'Recent mean NDVI rank minus reference mean rank. Integer differences per cell, not a continuous measurement. Available after 13 annual samples.'},
   performance:{label:'Productivity performance',field:'performance_ratio',metric:'productivity_performance_ratio',unit:'×',digits:3,min:0,mid:1,max:1.5,help:'Mean simulated NDVI divided by the scene-local 90th percentile for the same original cover. 1× equals that benchmark; above 1× is possible. Comparison groups lack soil type.'}
 };
-const mapLayers=[['cover','Land cover'],['ndvi','NDVI'],['soc','Soil carbon'],...Object.entries(numericLayers).map(([key,value])=>[key,value.label])];
+const mapLayers=[['cover','Land cover'],['ndvi','Vegetation'],['soc','Soil carbon'],['degradation','Land degradation']];
+function canonicalLayer(layer){
+  if(layer==='change')return 'soc';
+  if(['trajectory','state','performance'].includes(layer))return 'degradation';
+  return mapLayers.some(([key])=>key===layer)?layer:'cover';
+}
+const isNumericMap=layer=>['ndvi','soc'].includes(layer);
 function numericValue(cell,kind){return kind==='change'?cell.delta_pct:cell.degradation?.productivity?.[numericLayers[kind]?.field];}
 function numericColor(cell,kind){
-  const value=numericValue(cell,kind),scale=numericLayers[kind];
+  return numericValueColor(numericValue(cell,kind),kind);
+}
+function numericValueColor(value,kind){
+  const scale=numericLayers[kind];
   if(!Number.isFinite(value))return colors.unknown;
   return value<scale.mid?blend('882e7b','ffffe1',(value-scale.min)/(scale.mid-scale.min)):blend('ffffe1','2c6015',(value-scale.mid)/(scale.max-scale.mid));
 }
@@ -231,8 +240,7 @@ async function openScene(id,token,params=new URLSearchParams()){
   if(token!==routeToken)return;
   S.scene=scene;S.result=result;S.baseIndex=new Map(scene.baseline.cells.map(c=>[c.id,c]));S.resultIndex=new Map(result.cells.map(c=>[c.id,c]));S.selection.clear();S.cells.clear();S.busy=false;
   const b=scene.baseline;
-  const requestedLayer=params.get('layer')==='degradation'?'trajectory':params.get('layer');
-  if(mapLayers.some(([key])=>key===requestedLayer))S.layer=requestedLayer;
+  S.layer=canonicalLayer(params.get('layer')||S.layer);
   S.brush='inspect';S.pending.clear();S.paintQueue=[];
   mount(`<main id="main" class="workspace paint-workspace floating-workspace design-workspace"><section class="map-column" aria-label="Scenario map"><h1 id="scene-title" class="sr-only">${esc(scene.name)}</h1><span id="save-status" class="sr-only">Saved</span><div class="map-area"><div id="map" class="map" role="region" aria-label="Hover for cell details. Select a brush, then click or drag to paint."></div><a class="design-back" href="#projects" aria-label="Back to projects" title="Back to projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg></a><div class="brush-toolbar" role="toolbar" aria-label="Land-cover brushes">${Object.keys(names).filter(k=>k!=='unknown').map(k=>`<button data-brush="${k}" style="--brush-color:${colors[k]}" aria-label="Paint ${names[k]}" aria-pressed="false" title="${names[k]}">${brushIcon(k)}</button>`).join('')}</div><div class="map-compass">N<br><strong>↑</strong></div><div class="map-view-control"><div class="layer-tiles" role="group" aria-label="Map layers">${mapLayers.map(([v,n])=>`<button data-layer="${v}" aria-label="${n}" title="${n}" aria-pressed="${S.layer===v}">${layerIcon(v)}</button>`).join('')}</div></div><details class="map-key"><summary aria-label="Map legend and explanation">ⓘ</summary><div class="map-key-content"><div id="legend" class="legend"></div><p id="layer-context"></p><button id="evidence" class="source-button">Sources & model assumptions ↗</button></div></details><section class="simulation-dock" aria-label="Simulation clock"><div class="simulation-top"><button id="play-simulation" class="clock-button" aria-label="Play simulation">▶</button><div class="clock-year"><strong id="year-label">${scene.selected_year}</strong><span id="clock-state" class="sr-only">Paused</span></div><button id="reset-baseline" class="ghost small" title="Restore original land cover and year">↺ Reset</button></div><div id="simulation-metrics" aria-live="off"></div></section></div></section></main>`,{navigation:false});
   if(params.get('focus'))S.selection=new Set(params.get('focus').split(',').filter(id=>S.baseIndex.has(id)));
@@ -305,21 +313,49 @@ function scheduleTick(){
 }
 
 function blend(hex1,hex2,t){t=Math.max(0,Math.min(1,t));const a=hex1.match(/\w\w/g).map(x=>parseInt(x,16)),b=hex2.match(/\w\w/g).map(x=>parseInt(x,16));return '#'+a.map((v,i)=>Math.round(v+(b[i]-v)*t).toString(16).padStart(2,'0')).join('');}
+function spatialFieldInfo(){
+  const spec=numericLayers[S.layer]||({ndvi:{label:'NDVI',unit:'',digits:3,min:-1,max:1},soc:{label:'Soil carbon',unit:' t C/ha',digits:1,min:0,max:120}}[S.layer]);
+  return {...spec,variationMax:(spec.max-spec.min)/2,variationUnit:S.layer==='change'?' percentage points':spec.unit};
+}
+function spatialField(id){return S.comparison?.fieldCells?.get(id)?.[S.layer];}
+function isSpatialView(){return S.comparison&&isNumericMap(S.layer)&&S.comparison.fieldMode!=='design';}
+function spatialColor(id){
+  const stat=spatialField(id),value=stat?.[S.comparison.fieldMode];
+  if(!Number.isFinite(value))return colors.unknown;
+  if(S.comparison.fieldMode==='stddev')return blend('f7f8f3','80608d',value/spatialFieldInfo().variationMax);
+  if(S.layer==='ndvi')return blend('ece6c7','336d48',(value+.1)/.9);
+  if(S.layer==='soc')return blend('eee4cc','6a7552',value/120);
+  return numericValueColor(value,S.layer);
+}
+function spatialDetail(id){
+  const field=spatialField(id),spec=spatialFieldInfo(),base=S.baseIndex.get(id),count=S.comparison.result.spatial_fields.design_count;
+  const source=['soc','change'].includes(S.layer)?'soc':'ndvi';
+  return `<strong>${spec.label} · ${S.comparison.year}</strong><br>Cell ${esc(id)} · ${fmt(base.area_ha,2)} ha<br>Mean: ${fmt(field?.mean,spec.digits)}${spec.unit}<br>Variation (standard deviation): ${fmt(field?.stddev,spec.digits)}${spec.variationUnit}<br>${field?.n??0} / ${count} designs with values<br>${fmt((base.coverage?.[source]??0)*100,0)}% source coverage${(field?.n??0)<2?'<br>Variation needs at least two values.':''}<br>Reference excluded; variation is between designs.`;
+}
 function cellStyle(id){
   const base=S.baseIndex.get(id),state=S.resultIndex.get(id);
   let fill=colors[S.pending.get(id)||state.cover]||colors.unknown;
   if(S.layer==='ndvi'){const value=state.ndvi;fill=value==null?colors.unknown:blend('ece6c7','336d48',(value+.1)/.9);}
   if(S.layer==='soc')fill=state.soc==null?colors.unknown:blend('eee4cc','6a7552',state.soc/120);
+  if(S.layer==='degradation')fill=statusColors[state.degradation?.status]||statusColors.unknown;
   if(numericLayers[S.layer])fill=numericColor(state,S.layer);
+  if(isSpatialView())fill=spatialColor(id);
   return {fillColor:fill,fillOpacity:.9,color:'#f8f9f2',weight:.4,opacity:.3};
 }
 function ensureCellTooltip(id,layer){
   if(!layer.getTooltip())layer.bindTooltip(()=>cellDetail(id),{sticky:true});
 }
+function degradationDetail(state){
+  const d=state.degradation;if(!d)return '<br>Land degradation: unknown';
+  const p=d.productivity;
+  const fractions=values=>Object.entries(values).filter(([,v])=>v>0).map(([key,v])=>`${esc(key)} ${fmt(v*100,1)}%`).join(' · ');
+  return `<br><strong>Simulated land degradation: ${esc(d.status)}</strong><br>${fractions(d.fractions)}<br>Land-cover transitions: ${fractions(d.land_cover)}<br>Soil carbon: ${esc(d.soil_carbon)}<br>Productivity: ${esc(p.status)} · ${p.samples} annual samples<br>Trend: ${fmt(p.slope,4)} NDVI/year<br>State: ${fmt(p.state_class_change,0)} ranks<br>Performance: ${fmt(p.performance_ratio,3)}×${p.unavailable_reason?`<br>${esc(p.unavailable_reason)}`:''}<br>${fmt(d.assessed_fraction*100,1)}% assessed area`;
+}
 function cellDetail(id){
+  if(isSpatialView()&&S.baseIndex.has(id))return spatialDetail(id);
   if(!S.scene||!S.result||!S.baseIndex.has(id)||!S.resultIndex.has(id))return '';
   const b=S.scene.baseline,state=S.resultIndex.get(id),base=S.baseIndex.get(id);
-  return `<strong>${names[S.pending.get(id)||state.cover]||'Unknown'}</strong> · ${fmt(base.area_ha,2)} ha<br><span class="muted">Cell ${esc(id)}</span><br>NDVI ${fmt(base.ndvi,3)} · observed ${b.year}<br>NDVI ${fmt(state.ndvi,3)} · scenario ${S.result.year}<br>${fmt(base.coverage.ndvi*100,0)}% NDVI coverage<br>Soil carbon ${state.soc==null?'unknown':`${fmt(state.soc)} t C/ha · ${S.result.year}`}<br>${fmt(base.coverage.soc*100,0)}% soil coverage${state.delta_pct==null?'':` · ${signed(state.delta_pct)}% carbon change`}${numericLayers[S.layer]?`<br><strong>${numericLayers[S.layer].label}: ${fmt(numericValue(state,S.layer),numericLayers[S.layer].digits)}${numericLayers[S.layer].unit}</strong>${S.layer!=='change'?`<br>${state.degradation.productivity.samples} annual samples · ${fmt(base.coverage.ndvi*100,0)}% NDVI coverage${numericValue(state,S.layer)==null?`<br>${esc(S.layer==='trajectory'&&state.degradation.productivity.samples<10?'Needs 10 annual samples.':S.layer==='state'&&state.degradation.productivity.samples<13?'Needs 13 annual samples.':state.degradation.productivity.unavailable_reason||'Insufficient valid data for this metric.')}`:''}`:''}`:''}`;
+  return `<strong>${names[S.pending.get(id)||state.cover]||'Unknown'}</strong> · ${fmt(base.area_ha,2)} ha<br><span class="muted">Cell ${esc(id)}</span><br>NDVI ${fmt(base.ndvi,3)} · observed ${b.year}<br>NDVI ${fmt(state.ndvi,3)} · scenario ${S.result.year}<br>${fmt(base.coverage.ndvi*100,0)}% NDVI coverage<br>Soil carbon ${state.soc==null?'unknown':`${fmt(state.soc)} t C/ha · ${S.result.year}`}<br>${fmt(base.coverage.soc*100,0)}% soil coverage${state.delta_pct==null?'':` · ${signed(state.delta_pct)}% carbon change`}${numericLayers[S.layer]?`<br><strong>${numericLayers[S.layer].label}: ${fmt(numericValue(state,S.layer),numericLayers[S.layer].digits)}${numericLayers[S.layer].unit}</strong>${S.layer!=='change'?`<br>${state.degradation.productivity.samples} annual samples · ${fmt(base.coverage.ndvi*100,0)}% NDVI coverage${numericValue(state,S.layer)==null?`<br>${esc(S.layer==='trajectory'&&state.degradation.productivity.samples<10?'Needs 10 annual samples.':S.layer==='state'&&state.degradation.productivity.samples<13?'Needs 13 annual samples.':state.degradation.productivity.unavailable_reason||'Insufficient valid data for this metric.')}`:''}`:''}`:''}${S.layer==='degradation'?degradationDetail(state):''}`;
 }
 function refreshCellStyle(id,layer){
   const style=cellStyle(id);
@@ -330,12 +366,19 @@ function updateView(){
   S.resultIndex=new Map(S.result.cells.map(c=>[c.id,c]));
   $('scene-title').textContent=S.scene.name;$('year-label').textContent=S.result.year;
   document.querySelectorAll('[data-layer]').forEach(x=>{x.classList.toggle('active',x.dataset.layer===S.layer);x.setAttribute('aria-pressed',String(x.dataset.layer===S.layer));});
-  const contexts={cover:`${b.year} satellite land cover, updated by your interventions. Color shows the largest share.`,ndvi:`Scenario NDVI at ${S.result.year}, anchored to observed ${b.year} values. Response times are prototype assumptions.`,soc:'Estimated soil carbon in the top 30 cm. Source resolution: 250 m.'};
+  const contexts={cover:`${b.year} satellite land cover, updated by your interventions. Color shows the largest share.`,ndvi:`Scenario NDVI at ${S.result.year}, anchored to observed ${b.year} values. Response times are prototype assumptions.`,soc:'Estimated soil carbon in the top 30 cm. Source resolution: 250 m.',degradation:'Scenario assessment of land-cover transitions, productivity and soil carbon. Any known decline flags degradation; otherwise incomplete evidence remains unknown. Hover for assessed fractions. This is a modeled scenario, not observed degradation.'};
   $('layer-context').textContent=numericLayers[S.layer]?.help||contexts[S.layer];
   if(!S.comparison)updateSimulationMetrics();
   if(S.layer==='cover')$('legend').innerHTML=`<strong>Land cover</strong><div class="legend-items">${Object.entries(names).filter(([k])=>k!=='unknown').map(([k,n])=>`<span><i class="swatch" style="background:${colors[k]}"></i>${n}</span>`).join('')}</div>`;
+  else if(S.layer==='degradation')$('legend').innerHTML=`<strong>Simulated land degradation</strong><div class="legend-items">${Object.entries(statusColors).map(([key,color])=>`<span><i class="swatch" style="background:${color}"></i>${key[0].toUpperCase()+key.slice(1)}</span>`).join('')}</div>`;
   else if(numericLayers[S.layer])$('legend').innerHTML=numericLegend(S.layer);
   else $('legend').innerHTML=`<strong>${ndviView?'NDVI':'Soil carbon · tonnes C / ha'}</strong><div class="legend-gradient" style="background:linear-gradient(90deg,${ndviView?'#ece6c7,#336d48':'#eee4cc,#6a7552'})"></div><div class="legend-range"><span>${ndviView?'≤ −0.1':'0'}</span><span>${ndviView?'≥ 0.8':'120+'}</span></div><div style="margin-top:7px"><i class="swatch" style="background:${colors.unknown}"></i>No data</div>`;
+  if(isSpatialView()){
+    const spec=spatialFieldInfo(),variation=S.comparison.fieldMode==='stddev';
+    $('layer-context').textContent=variation?'Population standard deviation between designs at each cell. Higher values mean more disagreement, not more degradation. At least two values required.':'Mean across available designs at each matching cell. Missing values are excluded and counted on hover.';
+    if(variation)$('legend').innerHTML=`<strong>${spec.label} · standard deviation</strong><div class="legend-gradient" style="background:linear-gradient(90deg,#f7f8f3,#80608d)"></div><div class="legend-range"><span>0</span><span>≥ ${fmt(spec.variationMax,spec.digits)}${spec.variationUnit}</span></div><p class="tiny muted">Fixed color scale. Gray: fewer than two values.</p>`;
+    else $('legend').insertAdjacentHTML('afterbegin','<p class="tiny muted">Spatial mean · selected designs only</p>');
+  }
   for(const [id,layer] of S.cells){
     refreshCellStyle(id,layer);
     if(layer.getTooltip()?.isOpen())layer.setTooltipContent(()=>cellDetail(id));
@@ -377,13 +420,13 @@ function updateSimulationMetrics(){
     });
   }
   const numeric=numericLayers[S.layer];
-  const field=numeric?.metric||(ndviView?'simulated_ndvi':S.layer==='soc'?'carbon_tonnes':'carbon_change_tonnes');
-  const label=numeric?`${S.layer==='change'?'':'Mean '}${numeric.label.toLowerCase()}`:ndviView?'Scenario NDVI':S.layer==='soc'?'Modeled soil carbon':'Modeled carbon change';
-  const digits=numeric?.digits??(ndviView?3:1),unit=numeric?.unit??(ndviView?'':' t C');
+  const field=numeric?.metric||(ndviView?'simulated_ndvi':S.layer==='soc'?'carbon_tonnes':S.layer==='degradation'?'degrading_ha':'carbon_change_tonnes');
+  const label=numeric?`${S.layer==='change'?'':'Mean '}${numeric.label.toLowerCase()}`:ndviView?'Scenario NDVI':S.layer==='soc'?'Modeled soil carbon':S.layer==='degradation'?'Simulated declining area':'Modeled carbon change';
+  const digits=numeric?.digits??(ndviView?3:1),unit=numeric?.unit??(ndviView?'':S.layer==='degradation'?' ha':' t C');
   const points=S.timeline.filter(p=>p.year<=S.result.year);
   const graph=!missing.length?metricGraph(points,field,label,digits,unit):`<div class="metric-graph-placeholder" aria-busy="${!S.timelineError}">${S.timelineError?errorState('History could not load.','retry-history',{compact:true}):loadingState('Loading history…',{compact:true})}</div>`;
   const coverage=numeric?(S.layer==='change'?m.known_carbon_ha:m.productivity_coverage_ha?.[numeric.field]):null;
-  $('simulation-metrics').innerHTML=`<div class="metric-heading"><span>${label}</span></div><strong class="live-metric">${fmt(m[field],digits)}<span>${unit}</span></strong>${graph}${S.timelineSampled?'<small class="tiny muted">Sampled history · exact values at plotted years</small>':''}${numeric?`<div class="tiny muted">${fmt(coverage??0)} ha with values${S.layer==='change'?'':' · weighted by valid area'}</div>`:''}<div class="graph-years"><span>${scene.baseline.year}</span><span>${S.result.year>scene.baseline.year?S.result.year:''}</span></div>`;
+  $('simulation-metrics').innerHTML=`<div class="metric-heading"><span>${label}</span></div><strong class="live-metric">${fmt(m[field],digits)}<span>${unit}</span></strong>${graph}${S.layer==='degradation'?`<div class="tiny muted">${fmt(m.degradation_ha.unknown)} ha unassessed</div>`:''}${S.timelineSampled?'<small class="tiny muted">Sampled history · exact values at plotted years</small>':''}${numeric?`<div class="tiny muted">${fmt(coverage??0)} ha with values${S.layer==='change'?'':' · weighted by valid area'}</div>`:''}<div class="graph-years"><span>${scene.baseline.year}</span><span>${S.result.year>scene.baseline.year?S.result.year:''}</span></div>`;
   if($('retry-history'))$('retry-history').onclick=()=>{S.timelineError=false;updateSimulationMetrics();};
 
 }
@@ -535,7 +578,9 @@ function focusExtent(b,edited){
 async function comparison(ids,token,params=new URLSearchParams(),savedResults=null){
   const first=savedResults?null:await routeApi(`/scenes/${ids[0]}`);if(token!==routeToken)return;
   let year=Number(params.get('year'))||(savedResults?savedResults[0].year:first.selected_year),index=0,result,generation=0,playing=false,loading=false,timer;
-  let layer=params.get('layer')||S.layer;
+  let layer=canonicalLayer(params.get('layer')||S.layer),fieldMode=params.get('field')||'design';
+  if(!['design','mean','stddev'].includes(fieldMode))fieldMode='design';
+  if(!isNumericMap(layer))fieldMode='design';
   if(!mapLayers.some(([key])=>key===layer))layer='cover';
   function updateComparisonClock(){
     const button=$('compare-play');if(!button)return;
@@ -574,14 +619,14 @@ async function comparison(ids,token,params=new URLSearchParams(),savedResults=nu
   await load(year,true);
   if(token!==routeToken)return;
   const yearControl=savedResults?`<select id="compare-year" aria-label="Comparison year">${savedResults.map(r=>`<option ${r.year===year?'selected':''}>${r.year}</option>`).join('')}</select>`:`<input id="compare-year" aria-label="Comparison year" type="number" min="${first.baseline.year}" step="1" value="${year}">`;
-  mount(`<main id="main" class="workspace paint-workspace floating-workspace design-workspace comparison-workspace"><h1 class="sr-only">One place. Different futures.</h1><section class="map-column" aria-label="Comparison map"><div class="map-area"><div id="map" class="map" aria-label="Shared map of alternative designs"></div><a class="design-back" href="#projects" aria-label="Back to projects" title="Back to projects">${regionIcon('back')}</a><div class="design-navigator"><button id="previous-design" aria-label="Previous design">←</button><div><strong id="scene-title"></strong><span id="design-position"></span></div><button id="next-design" aria-label="Next design">→</button></div><section class="comparison-summary" aria-label="Variation between designs"><span class="eyebrow">Between designs</span><div id="design-distribution"></div><details id="comparison-details"><summary>Area, coverage & differences</summary><div id="design-statistics"></div></details></section><div class="map-view-control"><div class="layer-tiles" role="group" aria-label="Map layers">${mapLayers.map(([v,n])=>`<button data-layer="${v}" aria-label="${n}" title="${n}" aria-pressed="${layer===v}">${layerIcon(v)}</button>`).join('')}</div></div><details class="map-key"><summary aria-label="Map legend and explanation">ⓘ</summary><div class="map-key-content"><div id="legend" class="legend"></div><p id="layer-context"></p></div></details><section class="comparison-clock"><div class="row"><button id="compare-play" class="clock-button" aria-label="Play comparison" ${savedResults?'hidden':''}>▶</button><div><label class="sr-only" for="compare-year">${savedResults?'Saved evaluation year':'Compare at year'}</label>${yearControl}</div></div><span id="year-label" class="sr-only"></span><div id="comparison-status"></div></section></div></section></main>`,{navigation:false});
+  mount(`<main id="main" class="workspace paint-workspace floating-workspace design-workspace comparison-workspace"><h1 class="sr-only">One place. Different futures.</h1><section class="map-column" aria-label="Comparison map"><div class="map-area"><div id="map" class="map" aria-label="Shared map of alternative designs"></div><a class="design-back" href="#projects" aria-label="Back to projects" title="Back to projects">${regionIcon('back')}</a><div class="design-navigator"><button id="previous-design" aria-label="Previous design">←</button><div><strong id="scene-title"></strong><span id="design-position"></span></div><button id="next-design" aria-label="Next design">→</button></div><section class="comparison-summary" aria-label="Variation between designs"><div class="comparison-field-switch" role="group" aria-label="Spatial comparison view"><button data-comparison-field="design" aria-pressed="true">Design</button><button data-comparison-field="mean" aria-pressed="false">Mean</button><button data-comparison-field="stddev" aria-pressed="false">Variation</button></div><p id="comparison-map-note" class="tiny muted"></p><span class="eyebrow">Between designs</span><div id="design-distribution"></div><details id="comparison-details"><summary>Area, coverage & differences</summary><div id="design-statistics"></div></details></section><div class="map-view-control"><div class="layer-tiles" role="group" aria-label="Map layers">${mapLayers.map(([v,n])=>`<button data-layer="${v}" aria-label="${n}" title="${n}" aria-pressed="${layer===v}">${layerIcon(v)}</button>`).join('')}</div></div><details class="map-key"><summary aria-label="Map legend and explanation">ⓘ</summary><div class="map-key-content"><div id="legend" class="legend"></div><p id="layer-context"></p></div></details><section class="comparison-clock"><div class="row"><button id="compare-play" class="clock-button" aria-label="Play comparison" ${savedResults?'hidden':''}>▶</button><div><label class="sr-only" for="compare-year">${savedResults?'Saved evaluation year':'Compare at year'}</label>${yearControl}</div></div><span id="year-label" class="sr-only"></span><div id="comparison-status"></div></section></div></section></main>`,{navigation:false});
   const baseline=savedResults?savedResults[0].baseline:first.baseline;
   S.cells.clear();S.pending.clear();S.selection.clear();S.brush='inspect';S.layer=layer;
   S.baseIndex=new Map(baseline.cells.map(c=>[c.id,c]));
   const map=baseMap('map',latBounds(baseline.bounds));
   // Create geometry once. Design/year/layer changes only update colors and data.
   L.geoJSON({type:'FeatureCollection',features:baseline.cells.map(c=>({type:'Feature',geometry:c.geometry,properties:{id:c.id}}))},{style:{fillOpacity:.9,weight:.4},onEachFeature:(f,l)=>{
-    const id=f.properties.id;S.cells.set(id,l);l.on('mouseover',event=>{ensureCellTooltip(id,l);l.openTooltip(event.latlng);});
+    const id=f.properties.id;S.cells.set(id,l);l.on('add',()=>{l.getElement().dataset.cell=id;});l.on('mouseover',event=>{ensureCellTooltip(id,l);l.openTooltip(event.latlng);});
     l.on('click',()=>{S.selection=new Set([id]);window.dispatchEvent(new Event('land-context'));});
   }}).addTo(map);
   const cleanup=installCellTooltips(map);
@@ -589,21 +634,28 @@ async function comparison(ids,token,params=new URLSearchParams(),savedResults=nu
   function draw(){
     if(!result||token!==routeToken)return;
     const designs=[...result.scenes,{id:null,name:'Unchanged reference',revision:null,...result.reference}],current=designs[index%designs.length];
-    S.comparison={ids,year,result,snapshot:!!savedResults};
+    if(!isNumericMap(S.layer))fieldMode='design';
+    S.comparison={ids,year,result,snapshot:!!savedResults,fieldMode,fieldCells:new Map((result.spatial_fields?.cells||[]).map(c=>[c.id,c.fields]))};
     S.scene={...current,baseline:result.baseline,selected_year:year,actions:[]};S.result=current;
     updateView();
     $('design-position').textContent=`${index+1} / ${designs.length} · ${current.id?'design':'reference'}`;
-    const key=numericLayers[S.layer]?.metric||({ndvi:'simulated_ndvi',soc:'carbon_mean_t_ha',cover:'degrading_ha'}[S.layer]);
-    const metric=result.distribution[key],label=numericLayers[S.layer]?.label||({ndvi:'Mean NDVI',soc:'Mean soil carbon',cover:'Declining area'}[S.layer]);
-    const unit=numericLayers[S.layer]?.unit||({ndvi:'',soc:' t C/ha',cover:' ha'}[S.layer]),digits=numericLayers[S.layer]?.digits??(S.layer==='ndvi'?3:1);
+    document.querySelectorAll('[data-comparison-field]').forEach(button=>{button.setAttribute('aria-pressed',String(button.dataset.comparisonField===fieldMode));button.disabled=button.dataset.comparisonField!=='design'&&(!isNumericMap(S.layer)||!result.spatial_fields);});
+    $('comparison-map-note').textContent=!isNumericMap(S.layer)?'Choose vegetation or soil carbon for spatial mean or variation.':fieldMode==='design'?'Map shows the selected design.':fieldMode==='mean'?'Map shows the mean at each cell.':'Map shows standard deviation at each cell.';
+    $('comparison-details').hidden=fieldMode!=='design';
+    if(fieldMode!=='design'){$('scene-title').textContent=fieldMode==='mean'?'Spatial mean':'Spatial variation';$('design-position').textContent=`${result.scenes.length} designs · ${year}`;}
+
+    const key=numericLayers[S.layer]?.metric||({ndvi:'simulated_ndvi',soc:'carbon_mean_t_ha',cover:'degrading_ha',degradation:'degrading_ha'}[S.layer]);
+    const metric=result.distribution[key],label=numericLayers[S.layer]?.label||({ndvi:'Mean NDVI',soc:'Mean soil carbon',cover:'Declining area',degradation:'Declining area'}[S.layer]);
+    const unit=numericLayers[S.layer]?.unit||({ndvi:'',soc:' t C/ha',cover:' ha',degradation:' ha'}[S.layer]),digits=numericLayers[S.layer]?.digits??(S.layer==='ndvi'?3:1);
     const lo=metric.min??0,hi=metric.max??0,spread=hi-lo,x=v=>spread?20+(v-lo)/spread*220:130;
-    $('design-distribution').innerHTML=`<div class="metric-heading">${label}</div><strong class="distribution-mean">${fmt(metric.mean,digits)}<small>${unit} mean</small></strong><svg viewBox="0 0 260 58" role="img" aria-label="One dot per design; line marks mean. Range ${fmt(metric.min,digits)} to ${fmt(metric.max,digits)}"><line x1="20" x2="240" y1="28" y2="28" stroke="#bdcbb8"/>${metric.n?`<line x1="${x(metric.mean)}" x2="${x(metric.mean)}" y1="10" y2="46" stroke="#203d34" stroke-dasharray="3 3"/>`:''}${metric.points.map((p,i)=>`<circle data-design-dot="${esc(p.id)}" cx="${x(p.value)}" cy="${24+(i%3)*4}" r="${p.id===current.id?7:4}" fill="${p.id===current.id?'#214f40':'#a4b692'}" stroke="white"><title>${esc(p.name)}: ${fmt(p.value,digits)}${unit}</title></circle>`).join('')}</svg><div class="distribution-range"><span>${fmt(metric.min,digits)}–${fmt(metric.max,digits)}${unit}</span><span>${metric.n} designs${metric.missing?` · ${metric.missing} unknown`:''}</span></div><p class="comparison-current">${current.id?'This design':'Reference'}: <strong>${fmt(current.metrics[key],digits)}${unit}</strong></p><p class="tiny muted">Variation between alternatives, not forecast uncertainty. Reference excluded from mean.</p>`;
+    $('design-distribution').innerHTML=`<div class="metric-heading">${label}</div><strong class="distribution-mean">${fmt(metric.mean,digits)}<small>${unit} mean</small></strong><svg viewBox="0 0 260 58" role="img" aria-label="One dot per design; line marks mean. Range ${fmt(metric.min,digits)} to ${fmt(metric.max,digits)}"><line x1="20" x2="240" y1="28" y2="28" stroke="#bdcbb8"/>${metric.n?`<line x1="${x(metric.mean)}" x2="${x(metric.mean)}" y1="10" y2="46" stroke="#203d34" stroke-dasharray="3 3"/>`:''}${metric.points.map((p,i)=>`<circle data-design-dot="${esc(p.id)}" cx="${x(p.value)}" cy="${24+(i%3)*4}" r="${fieldMode==='design'&&p.id===current.id?7:4}" fill="${fieldMode==='design'&&p.id===current.id?'#214f40':'#a4b692'}" stroke="white"><title>${esc(p.name)}: ${fmt(p.value,digits)}${unit}</title></circle>`).join('')}</svg><div class="distribution-range"><span>${fmt(metric.min,digits)}–${fmt(metric.max,digits)}${unit}</span><span>${metric.n} designs${metric.missing?` · ${metric.missing} unknown`:''}</span></div><p class="comparison-current" ${fieldMode!=='design'?'hidden':''}>${current.id?'This design':'Reference'}: <strong>${fmt(current.metrics[key],digits)}${unit}</strong></p><p class="tiny muted">Variation between alternatives, not forecast uncertainty. Reference excluded from mean.</p>`;
     const m=current.metrics,d=current.difference_from_unchanged;
     $('design-statistics').innerHTML=`<dl>${[['Declining',`${fmt(m.degrading_ha)} ha${m.degradation_assessed_ha>0?` · ${fmt(100*m.degrading_ha/m.degradation_assessed_ha)}% of assessed`:' · no assessed area'}`],['Stable',`${fmt(m.degradation_ha.stable)} ha`],['Improving',`${fmt(m.degradation_ha.improving)} ha`],['Unassessed',`${fmt(m.degradation_ha.unknown)} / ${fmt(m.area_ha)} ha`],['Soil coverage',`${fmt(m.known_carbon_ha)} / ${fmt(m.area_ha)} ha`],['NDVI coverage',`${fmt(m.simulated_ndvi_coverage_ha)} / ${fmt(m.area_ha)} ha`],['Declining vs reference',`${d?signed(d.degrading_ha):'0'} ha`],['Carbon vs reference',`${d?signed(d.carbon_tonnes):'0'} t C`],['NDVI vs reference',d?fmt(d.simulated_ndvi,4):'0']].map(([k,v])=>`<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl><p class="tiny muted">Scenario model. Unknown area is not stable land. Percentages use assessed area.</p>`;
     window.dispatchEvent(new Event('land-context'));
   }
-  function rotate(step){if(!result)return;index=(index+step+result.scenes.length+1)%(result.scenes.length+1);draw();}
+  function rotate(step){if(!result)return;fieldMode='design';index=(index+step+result.scenes.length+1)%(result.scenes.length+1);draw();}
   $('previous-design').onclick=()=>rotate(-1);$('next-design').onclick=()=>rotate(1);
+  document.querySelectorAll('[data-comparison-field]').forEach(button=>button.onclick=()=>{fieldMode=button.dataset.comparisonField;draw();});
   document.querySelectorAll('[data-layer]').forEach(button=>button.onclick=()=>{S.layer=button.dataset.layer;draw();});
   $('compare-year').onchange=()=>{const requested=Number($('compare-year').value);if(!Number.isInteger(requested)||requested<baseline.year){$('compare-year').value=year;fail(new Error('Choose a whole year at or after the baseline.'));return;}load(requested);};
   async function tick(){if(!playing||token!==routeToken)return;await load(year+1);if(playing)timer=setTimeout(tick,1000);}
@@ -657,7 +709,7 @@ async function route(){
 }
 
 const assistantUI=createAssistantUI({api,post,escapeHtml:esc,
-  context:()=>({scene_id:S.scene?.id??null,comparison_ids:S.comparison?.ids??(S.scene?[]:[...S.selected]),selected_cells:[...S.selection],year:S.result?.year??null,layer:S.layer,bounds:S.scene?.baseline?.bounds??null}),
+  context:()=>({scene_id:isSpatialView()?null:S.scene?.id??null,comparison_field:S.comparison?.fieldMode??'design',comparison_ids:S.comparison?.ids??(S.scene?[]:[...S.selected]),selected_cells:[...S.selection],year:S.result?.year??null,layer:S.layer,bounds:S.scene?.baseline?.bounds??null}),
   onView:url=>{if(/^#(scene|compare|evaluation)\//.test(url))location.hash=url;},
   onMutation:async change=>{
     const id=change?.id;

@@ -116,7 +116,7 @@ body:has(.region-screen) #assistant-panel{bottom:249px}
   :root{--map-tile-size:48px;--map-tile-radius:14px;--map-tile-icon:22px}
   .design-workspace .design-back{top:80px;left:14px}
   .design-workspace .map-view-control{top:80px;left:74px}
-  .design-workspace .layer-tiles button{width:min(36px,calc((100vw - 150px)/7));padding:6px}
+  .design-workspace .layer-tiles button{width:min(36px,calc((100vw - 150px)/4));padding:6px}
   .design-workspace .brush-toolbar{left:50%;transform:translateX(-50%);max-width:calc(100% - 28px)}
   .design-workspace .brush-toolbar button{width:36px}
 }
@@ -145,3 +145,5 @@ input#compare-year::-webkit-inner-spin-button,input#compare-year::-webkit-outer-
  .comparison-workspace .design-navigator{left:14px;transform:none;width:calc(100% - 69px);max-width:300px}
  .comparison-workspace .design-navigator>div{width:auto;flex:1}
 }
+
+.comparison-field-switch{display:flex;gap:3px;padding:3px;background:#edf1e8;border-radius:10px;margin-bottom:10px}.comparison-field-switch button{flex:1;min-width:0;padding:6px 4px;border:1px solid transparent;background:transparent;border-radius:7px;font-size:11px}.comparison-field-switch button[aria-pressed=true]{background:var(--paper);border-color:var(--line)}.comparison-field-switch button:disabled{opacity:.45}.comparison-summary #comparison-map-note{margin:0 0 12px}
