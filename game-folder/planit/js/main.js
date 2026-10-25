@@ -1,7 +1,8 @@
 // main.js
 // Wires planIt together: the start page, the game, the HUD, challenges, and
 // sound. URL options for testing: ?play skips the start page (freestyle),
-// ?challenge=geoffrey|paul|lionel jumps into a challenge briefing.
+// ?challenge=geoffrey|paul|lionel jumps into a challenge briefing, ?pick=challenge
+// opens the challenge cards.
 
 import { LANDCOVERS } from './landcovers.js';
 import { createGame, renderThumbnails, TRAY_CODES } from './game.js';
@@ -11,7 +12,7 @@ import { skyCss } from './look.js';
 import { createAudio } from './audio.js';
 import { createStartScreen } from './start.js';
 import { connectBackend, ensureSignedIn } from './backend.js';
-import { loadMap, cityApiAvailable, requestCity, openScene } from './map-source.js';
+import { loadMap, cityApiAvailable, findPlace, buildCity, openScene, listMaps, mapPreviewUrl, RADIUS_KM, CELL_M } from './map-source.js';
 
 const $ = (id) => document.getElementById(id);
 document.getElementById('sky').style.background = skyCss();
@@ -148,7 +149,7 @@ const syncSound = () => soundBtn.setAttribute('aria-pressed', String(!audio.mute
 syncSound();
 soundBtn.addEventListener('click', () => { audio.toggleMute(); syncSound(); });
 window.addEventListener('keydown', (e) => {
-  if (e.key.toLowerCase() === 'm' && !$('hud').hidden) { audio.toggleMute(); syncSound(); }
+  if (e.key.toLowerCase() === 'm' && !$('hud').hidden && !e.target.closest?.('input, textarea')) { audio.toggleMute(); syncSound(); }
 });
 
 // ---------- challenges ----------
@@ -296,21 +297,67 @@ function showStart() {
   game.setPaused(true);
   start.show();
 }
-function showChoices() {
-  $('choices').hidden = false;
-  $('cards').hidden = true;
-  $('back-btn').hidden = true;
+// The start page shows one step at a time. Freestyle and Challenge share the
+// new-map steps (city, then radius) when the server can build maps:
+//   Freestyle: home (your saved maps, or New map -> city -> radius -> build), then play
+//   Challenge: city (this map's city to keep it) -> radius -> build, then the cards
+const STEPS = ['choices', 'map-home', 'city-form', 'radius-form', 'cards'];
+let mode = null;     // 'freestyle' | 'challenge' while on the new-map steps
+let place = null;    // the place found in the city step
+let canBuild = false;
+const back = [];     // steps to return to
+function step(id, { push = true } = {}) {
+  const now = STEPS.find((s) => !$(s).hidden);
+  if (push && now && now !== id) back.push(now);
+  for (const s of STEPS) $(s).hidden = s !== id;
+  $('back-btn').hidden = id === 'choices';
+  if (id === 'choices') back.length = 0;
+  if (id === 'city-form') setTimeout(() => $('city-input').focus(), 0);
 }
+function showChoices() { step('choices'); }
 
 const start = createStartScreen({ canvas: $('start-canvas'), pillar: $('pillar'), audio });
 const wake = () => { audio.start(); audio.play('start'); };
-$('freestyle-btn').addEventListener('click', () => { wake(); freestyle(); });
+$('freestyle-btn').addEventListener('click', () => {
+  wake();
+  if (!canBuild) { freestyle(); return; }
+  mode = 'freestyle';
+  showMapHome();
+});
+// Freestyle home: New map, then every saved map as a card. The map already on
+// screen opens at once; any other reloads into it.
+const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+async function showMapHome() {
+  const list = $('map-list');
+  list.innerHTML = '';
+  step('map-home');
+  let maps = [];
+  try { maps = await listMaps(); } catch (err) { console.warn('saved maps unavailable', err); }
+  list.innerHTML = '<button type="button" class="map-tile is-new" data-new="1"><b>＋</b><strong>New map</strong><span>Any city in the world</span></button>' + maps.map((m) => {
+    const n = m.action_count ?? 0;
+    return `<button type="button" class="map-tile" data-id="${esc(m.id)}" title="${esc(m.place || m.name)}">
+      <img src="${mapPreviewUrl(m)}" alt="" loading="lazy">
+      <strong>${esc(m.name)}</strong>
+      <span>${(m.cell_count ?? 0).toLocaleString()} tiles · ${n ? `${n} ${n === 1 ? 'change' : 'changes'}` : 'untouched'}</span>
+    </button>`;
+  }).join('');
+}
+$('map-list').addEventListener('click', (e) => {
+  const tile = e.target.closest('.map-tile');
+  if (!tile) return;
+  audio.play('click');
+  if (tile.dataset.new) askCity('');
+  else if (tile.dataset.id === params.get('scene')) freestyle();
+  else openScene(tile.dataset.id, 'play');
+});
 $('challenge-btn').addEventListener('click', () => {
   wake();
-  $('choices').hidden = true;
-  $('back-btn').hidden = false;
+  if (!canBuild) { showCards(); return; }
+  mode = 'challenge';
+  askCity(currentCity());
+});
+function showCards() {
   const cards = $('cards');
-  cards.hidden = false;
   cards.innerHTML = CHALLENGES.map((c) => `
     <button type="button" class="card" data-id="${c.id}">
       <img src="${portraits[c.character] || ''}" alt="">
@@ -318,13 +365,14 @@ $('challenge-btn').addEventListener('click', () => {
       <strong>${c.title}</strong>
       <span>${c.tagline}</span>
     </button>`).join('');
-});
+  step('cards');
+}
 $('cards').addEventListener('click', (e) => {
   const id = e.target.closest('.card')?.dataset.id;
   const c = CHALLENGES.find((x) => x.id === id);
   if (c) { audio.play('click'); startChallenge(c); }
 });
-$('back-btn').addEventListener('click', () => { audio.play('click'); showChoices(); });
+$('back-btn').addEventListener('click', () => { audio.play('click'); step(back.pop() ?? 'choices', { push: false }); });
 $('menu-btn').addEventListener('click', () => { audio.play('click'); showStart(); });
 
 // Character portraits for the cards and briefings (the characters module renders them once).
@@ -334,26 +382,76 @@ import('./characters.js').then(async (mod) => {
   if (challenge) $('goal-face').src = portraits[challenge.character] || '';
 }).catch((err) => console.warn('characters unavailable', err));
 
-// ---------- city search ----------
-// Shown only when a backend is reachable (the published artifact has none).
+// ---------- new maps ----------
+// Offered only when a backend is reachable (the published artifact has none).
 document.title = isSanFrancisco(data) || !data.name ? 'planIt' : `planIt · ${tokens.city}`;
-$('city-input').value = tokens.city === 'your city' ? '' : tokens.city;
-cityApiAvailable().then((ok) => { $('city-form').hidden = !ok; });
+const currentCity = () => (tokens.city === 'your city' ? '' : tokens.city);
+// The city's name, called out next to the wordmark while playing.
+$('city-badge-name').textContent = currentCity();
+$('city-badge').title = data.name || '';
+$('city-badge').hidden = !currentCity();
+cityApiAvailable().then((ok) => { canBuild = ok; });
+
+function askCity(value) {
+  $('city-input').value = value;
+  $('city-label').textContent = mode === 'challenge' ? 'Where do you want to play?' : 'Your city';
+  $('city-status').textContent = '';
+  $('city-status').classList.remove('bad');
+  $('city-go').disabled = false;
+  step('city-form');
+}
 $('city-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = $('city-input').value.trim();
   if (!name) return;
+  audio.play('click');
+  // A challenge in the city already on screen needs no new map.
+  if (mode === 'challenge' && name.toLowerCase() === currentCity().toLowerCase()) { showCards(); return; }
   const status = $('city-status');
   status.classList.remove('bad');
+  status.textContent = `Finding ${name}…`;
   $('city-go').disabled = true;
   try {
-    const id = await requestCity(name, (t) => { status.textContent = t; });
-    status.textContent = 'Map ready. Opening…';
-    openScene(id);
+    place = await findPlace(name);
+    status.textContent = '';
+    $('radius-place').textContent = place.name;
+    $('radius-input').value = RADIUS_KM.default;
+    showRadius();
+    $('radius-status').textContent = '';
+    $('radius-status').classList.remove('bad');
+    $('radius-go').disabled = false;
+    step('radius-form');
   } catch (err) {
-    status.textContent = err.message || 'That city could not be built.';
+    status.textContent = err.message || 'That city could not be found.';
     status.classList.add('bad');
-    $('city-go').disabled = false;
+  }
+  $('city-go').disabled = false;
+});
+
+// The radius is centre to edge, so the map is a square twice as wide.
+Object.assign($('radius-input'), { min: RADIUS_KM.min, max: RADIUS_KM.max });
+function showRadius() {
+  const km = Number($('radius-input').value);
+  const n = Math.round((km * 2000) / CELL_M);
+  $('radius-out').textContent = `${km} km · about ${n} × ${n} tiles`;
+}
+$('radius-input').addEventListener('input', showRadius);
+$('radius-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  audio.play('click');
+  const status = $('radius-status');
+  status.classList.remove('bad');
+  $('radius-go').disabled = true;
+  $('back-btn').hidden = true;
+  try {
+    const id = await buildCity(place, Number($('radius-input').value), (t) => { status.textContent = t; });
+    status.textContent = 'Map ready. Opening…';
+    openScene(id, mode === 'challenge' ? 'challenge' : 'play');
+  } catch (err) {
+    status.textContent = err.message || 'That map could not be built.';
+    status.classList.add('bad');
+    $('radius-go').disabled = false;
+    $('back-btn').hidden = false;
   }
 });
 
@@ -361,4 +459,5 @@ if (params.has('play')) freestyle();
 else if (params.get('challenge')) {
   const c = CHALLENGES.find((x) => x.id === params.get('challenge'));
   if (c) setTimeout(() => startChallenge(c), 300); else showStart();
-} else showStart();
+} else if (params.get('pick') === 'challenge') { showStart(); showCards(); }
+else showStart();

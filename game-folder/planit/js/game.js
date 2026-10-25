@@ -115,7 +115,16 @@ export function createGame({ container, data: raw, audio = null, hud }) {
   // Left button selects tiles; right-drag rotates, Shift+right-drag or middle-drag pans.
   controls.mouseButtons = { LEFT: null, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.ROTATE };
   controls.keys = { LEFT: 'KeyA', UP: 'KeyW', RIGHT: 'KeyD', BOTTOM: 'KeyS' };
-  controls.listenToKeyEvents(window);
+  // WASD pans the map, but only in play and never while typing (city box, sign-in):
+  // OrbitControls calls preventDefault on those keys, which drops them from the text box.
+  let keyPan = null;
+  controls.listenToKeyEvents({
+    addEventListener: (type, fn) => {
+      keyPan = (e) => { if (active && !e.target.closest?.('input, textarea, [contenteditable]')) fn(e); };
+      window.addEventListener(type, keyPan);
+    },
+    removeEventListener: (type) => window.removeEventListener(type, keyPan),
+  });
   controls.keyPanSpeed = 14;
 
   const lights = addLights(scene, span * 0.6);
