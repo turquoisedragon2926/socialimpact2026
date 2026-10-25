@@ -78,6 +78,11 @@ export async function buildCity(place, radiusKm = RADIUS_KM.default, onProgress 
   throw new Error('Timed out building the map.');
 }
 
+// The signed-in player's saved maps, newest first as the server lists them.
+// Each has id, name, place, cell_count, action_count and revision.
+export const listMaps = () => json(`${API}/api/scenes?summary=true`, { credentials: 'same-origin' });
+export const mapPreviewUrl = (m) => `${API}/api/scenes/${m.id}/preview.svg?revision=${m.revision}`;
+
 // Opens a scene by reloading with ?scene=<id>, so every module starts fresh for the new city.
 // then: 'play' goes straight into Freestyle, 'challenge' opens the challenge cards.
 export function openScene(id, then = null) {

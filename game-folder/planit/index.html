@@ -85,14 +85,10 @@
         <strong>Challenge</strong><span>Help a friend reach a goal.</span>
       </button>
     </div>
-    <!-- Freestyle with the server: keep this map or make a new one -->
-    <div class="choices" id="map-pick" hidden>
-      <button type="button" class="choice" id="this-map-btn">
-        <strong id="this-map-name">This map</strong><span>Keep building here.</span>
-      </button>
-      <button type="button" class="choice" id="new-map-btn">
-        <strong>New map</strong><span>Pick any city in the world.</span>
-      </button>
+    <!-- Freestyle home (with the server): your saved maps, and a new one -->
+    <div class="map-home" id="map-home" hidden>
+      <span class="eyebrow">Freestyle · your maps</span>
+      <div class="map-list" id="map-list" aria-label="Your maps"></div>
     </div>
     <!-- a new map, step 1: the city -->
     <form class="city-form" id="city-form" hidden autocomplete="off">

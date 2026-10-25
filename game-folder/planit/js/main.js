@@ -12,7 +12,7 @@ import { skyCss } from './look.js';
 import { createAudio } from './audio.js';
 import { createStartScreen } from './start.js';
 import { connectBackend, ensureSignedIn } from './backend.js';
-import { loadMap, cityApiAvailable, findPlace, buildCity, openScene, RADIUS_KM, CELL_M } from './map-source.js';
+import { loadMap, cityApiAvailable, findPlace, buildCity, openScene, listMaps, mapPreviewUrl, RADIUS_KM, CELL_M } from './map-source.js';
 
 const $ = (id) => document.getElementById(id);
 document.getElementById('sky').style.background = skyCss();
@@ -299,9 +299,9 @@ function showStart() {
 }
 // The start page shows one step at a time. Freestyle and Challenge share the
 // new-map steps (city, then radius) when the server can build maps:
-//   Freestyle: this map or a new one -> city -> radius -> build, then play
+//   Freestyle: home (your saved maps, or New map -> city -> radius -> build), then play
 //   Challenge: city (this map's city to keep it) -> radius -> build, then the cards
-const STEPS = ['choices', 'map-pick', 'city-form', 'radius-form', 'cards'];
+const STEPS = ['choices', 'map-home', 'city-form', 'radius-form', 'cards'];
 let mode = null;     // 'freestyle' | 'challenge' while on the new-map steps
 let place = null;    // the place found in the city step
 let canBuild = false;
@@ -322,11 +322,34 @@ $('freestyle-btn').addEventListener('click', () => {
   wake();
   if (!canBuild) { freestyle(); return; }
   mode = 'freestyle';
-  $('this-map-name').textContent = tokens.city === 'your city' ? 'This map' : tokens.city;
-  step('map-pick');
+  showMapHome();
 });
-$('this-map-btn').addEventListener('click', () => { audio.play('click'); freestyle(); });
-$('new-map-btn').addEventListener('click', () => { audio.play('click'); askCity(''); });
+// Freestyle home: New map, then every saved map as a card. The map already on
+// screen opens at once; any other reloads into it.
+const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+async function showMapHome() {
+  const list = $('map-list');
+  list.innerHTML = '';
+  step('map-home');
+  let maps = [];
+  try { maps = await listMaps(); } catch (err) { console.warn('saved maps unavailable', err); }
+  list.innerHTML = '<button type="button" class="map-tile is-new" data-new="1"><b>＋</b><strong>New map</strong><span>Any city in the world</span></button>' + maps.map((m) => {
+    const n = m.action_count ?? 0;
+    return `<button type="button" class="map-tile" data-id="${esc(m.id)}" title="${esc(m.place || m.name)}">
+      <img src="${mapPreviewUrl(m)}" alt="" loading="lazy">
+      <strong>${esc(m.name)}</strong>
+      <span>${(m.cell_count ?? 0).toLocaleString()} tiles · ${n ? `${n} ${n === 1 ? 'change' : 'changes'}` : 'untouched'}</span>
+    </button>`;
+  }).join('');
+}
+$('map-list').addEventListener('click', (e) => {
+  const tile = e.target.closest('.map-tile');
+  if (!tile) return;
+  audio.play('click');
+  if (tile.dataset.new) askCity('');
+  else if (tile.dataset.id === params.get('scene')) freestyle();
+  else openScene(tile.dataset.id, 'play');
+});
 $('challenge-btn').addEventListener('click', () => {
   wake();
   if (!canBuild) { showCards(); return; }
