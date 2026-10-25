@@ -122,7 +122,9 @@ window.addEventListener('keydown', (e) => {
 // The tray tucks away while the time-lapse panel is up, then comes back as it was.
 const timeline = createTimeline({
   el: $('timeline'), game, audio,
-  onEnd: () => { refreshTray(); if (challenge) showResult(); },
+  // A challenge is scored on the Land health view's values 30 years out, so the
+  // map goes back to them (from the time-lapse's layer) before the result card.
+  onEnd: async () => { refreshTray(); if (challenge) { await game.recompute(); showResult(); } },
   onClose: () => { setTrayOpen(trayBeforeTimeline, { remember: false }); refreshTray(); },
 });
 backendReady.then((b) => b && timeline.connect(b));   // freestyle's time-lapse then runs the land model year by year
@@ -206,7 +208,7 @@ async function startChallenge(c) {
   await game.reset();
   baseline = { codes: game.world.state.codes.slice(), values: Float32Array.from(game.world.values) };
   timeline.close();
-  timeline.setLive(false);
+  timeline.setLive(true);   // the same year-by-year time-lapse as freestyle
   enterGame(c.title);
   $('goal').hidden = false;
   $('goal-face').src = portraits[c.character] || '';
@@ -236,6 +238,15 @@ function showCovers(codes, rename = null) {
 }
 const coverLabel = (code) => (challenge?.coverName && challenge.covers?.[0] === code ? challenge.coverName : SHORT_NAMES[code]);
 
+// The headline of the result card: land health change from the plan, and how
+// many of the challenge's goals and limits were met (one star each).
+function scoreHtml(res) {
+  const total = res.rows.length;
+  const stars = '★'.repeat(res.met) + '☆'.repeat(total - res.met);
+  const pct = res.score == null ? '' : `<b class="score-pct ${res.score > 0 ? 'up' : res.score < 0 ? 'down' : ''}">${res.score > 0 ? '+' : ''}${res.score}%</b> land health from your plan · `;
+  return `<span class="score">${pct}<span class="score-stars" aria-label="${res.met} of ${total} met">${stars}</span> ${res.met} of ${total} met</span>`;
+}
+
 function showResult() {
   const res = evaluate(challenge, ctx());
   audio.play(res.won ? 'win' : 'lose');
@@ -244,6 +255,7 @@ function showResult() {
     eyebrow: res.won ? 'Challenge complete' : 'Not quite yet',
     title: res.won ? 'You did it!' : 'Keep going',
     text: [
+      scoreHtml(res),
       line(res.won ? challenge.win : challenge.lose),
       `<span class="lesson"><b>What this teaches</b>${line(challenge.lesson)}</span>`,
       `<span class="lesson"><b>Take it to your city</b>${line(challenge.action)}</span>`,

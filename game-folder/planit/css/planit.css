@@ -270,6 +270,11 @@ body:has(#goal:not([hidden])) .controls-hint { display: none; } /* the challenge
 .modal-body { padding: 26px 28px 24px; display: grid; gap: 12px; align-content: start; }
 .modal-body h2 { margin: 0; font-size: 28px; font-weight: 600; line-height: 1.1; }
 .speech p { margin: 0 0 8px; font-size: 16px; line-height: 1.5; }
+.speech .score { display: block; font-size: 15px; color: var(--ink-2); }
+.speech .score-pct { font-size: 22px; color: var(--ink); }
+.speech .score-pct.up { color: var(--green-deep); }
+.speech .score-pct.down { color: #8a3f5e; }
+.speech .score-stars { color: #e0a526; letter-spacing: 2px; font-size: 18px; }
 .speech .lesson { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(79, 154, 106, 0.1); font-size: 14px; }
 .speech .lesson b { display: block; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green-deep); margin-bottom: 2px; }
 .speech .note { font-size: 13px; color: var(--ink-2); }
