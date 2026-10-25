@@ -363,6 +363,10 @@ import('./characters.js').then(async (mod) => {
 // Offered only when a backend is reachable (the published artifact has none).
 document.title = isSanFrancisco(data) || !data.name ? 'planIt' : `planIt · ${tokens.city}`;
 const currentCity = () => (tokens.city === 'your city' ? '' : tokens.city);
+// The city's name, called out next to the wordmark while playing.
+$('city-badge-name').textContent = currentCity();
+$('city-badge').title = data.name || '';
+$('city-badge').hidden = !currentCity();
 cityApiAvailable().then((ok) => { canBuild = ok; });
 
 function askCity(value) {
