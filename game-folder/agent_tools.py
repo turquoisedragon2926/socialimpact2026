@@ -5,7 +5,7 @@ from langchain_core.tools import tool
 from pydantic import ValidationError
 
 import model
-from schemas import NewScene, ScenePatch, Action, Revision, Clone, Compare, EvaluationRequest
+from schemas import NewScene, ScenePatch, Action, Revision, Clone, Compare
 from services import ServiceError
 
 
@@ -97,9 +97,10 @@ def build_tools(service, jobs, context):
                          cover: Literal['trees','grass','crops','wetland','built','bare','water'], year: int, note: str = '') -> dict:
         """Paint selected cells as one dated, undoable intervention, exactly like a user stroke.
 
+        Editing before later interventions creates a new branch; use the returned design ID afterward.
         Read cell IDs and revision first. On 409 inspect again; do not silently overwrite concurrent edits.
         """
-        return {'id': scene_id, **service.act(scene_id,Action(revision=revision,cell_ids=cell_ids,cover=cover,year=year,note=note))}
+        return {'id': scene_id, **service.act(scene_id,Action(revision=revision,cell_ids=cell_ids,cover=cover,year=year,note=note),branch=True)}
 
     @exposed(mutates=True)
     def undo_design(scene_id: str, revision: int) -> dict:
@@ -133,42 +134,6 @@ def build_tools(service, jobs, context):
             'designs': [{k:v for k,v in s.items() if k not in ('cells','ndvi_model','degradation_model')} for s in result['scenes']],
             'url': '#compare/'+','.join(scene_ids)+'?year='+str(year)}
 
-    @exposed(mutates=True)
-    def start_evaluation(scene_ids: list[str], revisions: dict[str,int], years: list[int]) -> dict:
-        """Start a background evaluation of exact design revisions, independent of map and clock.
-
-        Supply revisions from inspect_design. Returns a task ID; use task_status to retrieve results.
-        Switching designs or closing the assistant does not stop this job.
-        """
-        return jobs.evaluate(service,EvaluationRequest(scene_ids=scene_ids,revisions=revisions,years=years))
-
-    @exposed()
-    def task_status(task_id: str) -> dict:
-        """Inspect progress/cancellation/failure or computed results for a background task.
-
-        For completed evaluations, metrics include exact captured design revisions. Maps remain
-        available through the result link. Do not claim a queued job has completed.
-        """
-        job = jobs.get(service.user_id,task_id,True,include_events=False)
-        result = job.get('result')
-        if result and job['kind']=='evaluation':
-            job['result'] = {'snapshots': result['snapshots'], 'evaluations': [
-                {'year': e['year'], 'distribution': e['distribution'],
-                 'reference_metrics': e['reference']['metrics'],
-                 'scenes': [{k:v for k,v in s.items() if k not in ('cells','ndvi_model','degradation_model')} for s in e['scenes']]}
-                for e in result['evaluations']]}
-        return {**job,'url':'#evaluation/'+task_id}
-
-    @exposed()
-    def list_tasks() -> list:
-        """List recent background tasks in this workspace."""
-        return [{k:v for k,v in job.items() if k!='events'} for job in jobs.list(service.user_id)]
-
-    @exposed()
-    def cancel_task(task_id: str) -> dict:
-        """Stop a background evaluation or assistant run; already committed edits remain undoable."""
-        return jobs.cancel(service.user_id,task_id)
-
     @exposed()
     def show_view(scene_id: str | None = None, scene_ids: list[str] | None = None,
                   layer: str = 'cover', year: int | None = None, cell_ids: list[str] | None = None,
@@ -196,5 +161,4 @@ def build_tools(service, jobs, context):
         return {'url':url}
 
     return [list_designs,inspect_design,search_places,create_design,duplicate_design,update_design,
-            paint_land_cover,undo_design,reset_design,delete_design,compare_designs,start_evaluation,
-            task_status,list_tasks,cancel_task,show_view]
+            paint_land_cover,undo_design,reset_design,delete_design,compare_designs,show_view]

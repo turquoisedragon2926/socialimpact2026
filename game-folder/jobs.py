@@ -6,8 +6,7 @@ import threading
 import time
 from uuid import uuid4
 
-from services import ServiceError, compare_snapshots
-from comparison import spatial_fields
+from services import ServiceError
 
 TERMINAL = {'complete', 'failed', 'cancelled', 'interrupted'}
 
@@ -101,7 +100,7 @@ class JobManager:
 
     def get(self, user_id, job_id, include_result=False, include_events=True):
         with self.db() as con:
-            row = con.execute('SELECT * FROM work_jobs WHERE id=? AND user_id=?', (job_id, user_id)).fetchone()
+            row = con.execute("SELECT * FROM work_jobs WHERE kind='assistant' AND id=? AND user_id=?", (job_id, user_id)).fetchone()
         if not row:
             raise ServiceError(404, 'Task not found.')
         result = dict(row)
@@ -113,15 +112,11 @@ class JobManager:
             if key in result:
                 result[key] = json.loads(result[key]) if result[key] else None
         result.pop('user_id')
-        if include_result and result['kind']=='evaluation' and result.get('result'):
-            for evaluation in result['result'].get('evaluations', []):
-                if 'spatial_fields' not in evaluation:
-                    evaluation['spatial_fields'] = spatial_fields(evaluation['scenes'])
         return result
 
     def list(self, user_id):
         with self.db() as con:
-            ids = [r[0] for r in con.execute('SELECT id FROM work_jobs WHERE user_id=? ORDER BY created DESC LIMIT 40', (user_id,))]
+            ids = [r[0] for r in con.execute("SELECT id FROM work_jobs WHERE kind='assistant' AND user_id=? ORDER BY created DESC LIMIT 40", (user_id,))]
         return [self.get(user_id, job_id, include_events=False) for job_id in ids]
 
     def cancel(self, user_id, job_id):
@@ -133,25 +128,6 @@ class JobManager:
                     context.cancelled.set()
                     self.update(job_id, status='cancelling', message='Stopping… Completed edits are retained.')
         return self.get(user_id, job_id)
-
-    def evaluate(self, service, body):
-        items = service.snapshots(body.scene_ids, body.revisions)
-        years = sorted(set(body.years))
-        if years[0] < items[0]['baseline']['year']:
-            raise ServiceError(422, 'Evaluation cannot precede the baseline.')
-        payload = {'designs': [{'id': s['id'], 'name': s['name'], 'revision': s['revision'],
-                               'baseline_id': s['baseline_id'], 'model_version': s['model_version'],
-                               'ndvi_model_version': s['ndvi_model_version'], 'climate': s['climate'], 'actions': s['actions']}
-                              for s in items], 'years': years}
-
-        def work(context):
-            results = []
-            for index, year in enumerate(years):
-                context.progress(index/len(years), f'Evaluating {year} · {index+1}/{len(years)}')
-                result = compare_snapshots(items, year, context.check)
-                results.append(result)
-            return {'snapshots': payload['designs'], 'evaluations': results}
-        return self.submit(service.user_id, 'evaluation', payload, work)
 
     def close(self):
         for context in list(self.controls.values()):

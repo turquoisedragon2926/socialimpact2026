@@ -12,7 +12,7 @@ from statistics import NormalDist
 import numpy as np
 import ndvi
 
-VERSION = 'productivity-simulated-series-v3'
+VERSION = 'productivity-simulated-series-v4'
 REFERENCE = 'https://github.com/ConservationInternational/trends.earth-algorithms/blob/c8b1216c2191c1e209cba2cbb93dc24905dd7f09/te_algorithms/gee/productivity.py'
 BASELINE_YEARS = 10
 RECENT_YEARS = 3
@@ -103,7 +103,13 @@ def assess(series, groups, checkpoint=lambda: None):
         t, st, p = trajectory[i], state[i], performance[i]
         if groups[i] in ('unknown', 'water'):
             t = st = p = 'unknown'
-        output.append({'status': combine(t, st, p), 'trajectory': t, 'state': st, 'performance': p,
+        # Only the combined status is assumed; do not invent numeric scores or
+        # fill missing observations, invalid benchmarks, or open-water history.
+        assumed = years < BASELINE_YEARS+RECENT_YEARS and valid[i] and p != 'unknown'
+        status = 'stable' if assumed else combine(t, st, p)
+        output.append({'status': status,
+            'status_basis': 'assumed_stable' if assumed else 'unavailable' if status == 'unknown' else 'calculated',
+            'trajectory': t, 'state': st, 'performance': p,
             'samples': years, 'ready_after_samples': BASELINE_YEARS+RECENT_YEARS,
             'slope': float(slopes[i]) if t != 'unknown' else None,
             'state_class_change': int(shifts[i]) if st != 'unknown' else None,
@@ -133,7 +139,6 @@ def evaluate(baseline, actions, year, model_version, checkpoint=lambda: None):
     output = assess(series, assessment_groups, checkpoint)
     for row, water in zip(output, water_history):
         row['unavailable_reason'] = ('Open-water history is outside this terrestrial productivity model.' if water else
-            f'Needs {BASELINE_YEARS+RECENT_YEARS} annual samples.' if row['samples'] < BASELINE_YEARS+RECENT_YEARS else
             'Missing NDVI or no positive comparable-land benchmark.' if row['status'] == 'unknown' else None)
     return output
 
@@ -145,4 +150,5 @@ def metadata(start):
         'trajectory': 'Linear slope and pinned Mann–Kendall 95% table through 60 samples; longer series use a continuity-corrected normal approximation with conservative untied variance. Available from 10 annual samples. Statistical significance describes the synthetic series, not forecast confidence.',
         'state': f'Fixed first 10 samples ({start}–{start+9}) versus latest 3 non-overlapping samples; available from {start+12}. Extended baseline percentiles, ±2 class threshold, 0.01 NDVI deadband.',
         'performance': 'Mean over the elapsed simulation / scene-local 90th percentile for the same initial dominant land cover; ≤0.5 declines. Groups stay fixed, benchmarks use the same elapsed period. No soil taxonomy; any open-water history and nonpositive benchmarks unknown.',
-        'limitations': 'Scenario adaptation, not identical Trends.Earth outputs. Early interventions affect the simulated reference period. No historical NDVI is invented; no local ecological validation.'}
+        'initial_policy': 'Before 13 annual samples, combined productivity is assumed stable for cells with valid NDVI and a positive terrestrial comparison benchmark. Component scores remain calculated or unavailable. From 13 samples, use calculated productivity. Missing inputs and open-water history remain unknown.',
+        'limitations': 'Initial stability is a simulation assumption, not observed historical stability. Scenario adaptation, not identical Trends.Earth outputs. Early interventions affect the simulated reference period. No historical NDVI is invented; no local ecological validation.'}

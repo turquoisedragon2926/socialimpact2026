@@ -33,6 +33,26 @@ with tempfile.TemporaryDirectory() as runtime:
             page=ctx.new_page();errors=[];page.on('pageerror',lambda e:errors.append(e.stack))
             page.goto(URL+f'/#compare/{sid},{other}?year=2041&layer=ndvi')
             target=page.locator(f'[data-cell="{cell["id"]}"]');expect(target).to_be_visible()
+            expect(page.locator('.comparison-timeline')).to_be_visible(timeout=30000)
+            expect(page.locator('[data-design-line]')).to_have_count(2)
+            expect(page.locator('.timeline-design.active')).to_have_attribute('data-design-line',sid)
+            page.locator('#next-design').click();expect(page.locator('.timeline-design.active')).to_have_attribute('data-design-line',other)
+            page.locator('#previous-design').click()
+            page.locator('.comparison-timeline').focus();page.keyboard.press('Home');expect(page.locator('#compare-year')).to_have_value('2021')
+            page.keyboard.press('End');expect(page.locator('#compare-year')).to_have_value('2051')
+            page.locator('#compare-year').fill('2041');page.locator('#compare-year').press('Tab');expect(page.locator('.comparison-timeline')).to_have_attribute('aria-valuenow','2041')
+            chart_checks=page.evaluate("""async () => {
+                const {renderComparisonChart}=await import('/static/comparison-chart.js');
+                const el=document.createElement('div');document.body.append(el);
+                const point=(year,values)=>({year,scenes:values.map((v,i)=>({id:String(i),name:'Design '+i,metrics:{simulated_ndvi:v}})),reference:{metrics:{simulated_ndvi:0}},distribution:{simulated_ndvi:{mean:values[0]===null?null:.5,stddev:values[0]===null?null:.25,n:values[0]===null?0:2,missing:values[0]===null?2:0}}});
+                renderComparisonChart(el,{points:[point(2021,[.25,.75]),point(2022,[null,null]),point(2023,[.25,.75])],key:'simulated_ndvi',label:'NDVI',unit:'',digits:3,year:2021,selectedId:'0',format:String,escape:String,onYear:()=>{}});
+                const result={bands:el.querySelectorAll('polygon').length,segments:el.querySelector('[data-design-line]').getAttribute('d').split('M').length-1,band:el.querySelector('polygon').getAttribute('points')};el.remove();return result;
+            }""")
+            assert chart_checks['bands']==2 and chart_checks['segments']==2,chart_checks
+            # Reference 0 and maximum .75 get 10% padding: [-.075, .825].
+            band_y=[float(pair.split(',')[1]) for pair in chart_checks['band'].split()]
+            assert abs(min(band_y)-(120-(.75+.075)/.9*100))<1e-8
+            assert abs(max(band_y)-(120-(.25+.075)/.9*100))<1e-8
             page.evaluate('window.originalCell=document.querySelector("[data-cell]")')
             view=page.locator('.leaflet-map-pane').get_attribute('style')
             page.locator('[data-comparison-field=mean]').click();expect(page.locator('#scene-title')).to_have_text('Spatial mean')
@@ -42,25 +62,17 @@ with tempfile.TemporaryDirectory() as runtime:
             target.hover();expect(page.locator('.leaflet-tooltip')).to_contain_text('2 / 2 designs with values')
             page.mouse.move(10,10);page.screenshot(path=str(OUT/'spatial-mean.png'))
             page.locator('[data-comparison-field=stddev]').click();expect(target).to_have_attribute('fill',blend('f7f8f3','80608d',sd))
-            page.locator('.map-key summary').click();expect(page.locator('#legend')).to_contain_text('standard deviation');page.locator('.map-key summary').click()
+            expect(page.locator('.comparison-summary #legend')).to_contain_text('standard deviation')
             page.screenshot(path=str(OUT/'spatial-variation.png'))
             page.locator('[data-layer=soc]').click();expect(page.locator(f'[data-cell="{missing["id"]}"]')).to_have_attribute('fill','#d9dcd6')
             page.locator('[data-layer=cover]').click();expect(page.locator('[data-comparison-field=mean]')).to_be_disabled();expect(page.locator('[data-comparison-field=design]')).to_have_attribute('aria-pressed','true')
             page.locator('[data-layer=ndvi]').click();page.locator('[data-comparison-field=mean]').click()
             page.locator('#compare-year').fill('2051');page.locator('#compare-year').press('Tab');expect(page.locator('#design-position')).to_contain_text('2051');expect(page.locator('[data-comparison-field=mean]')).to_have_attribute('aria-pressed','true')
             assert api.get(URL+'/api/scenes/'+sid).json()['selected_year']==2021
-            # Persisted evaluations have the same spatial results and controls.
-            job=api.post(URL+'/api/evaluations',data={'scene_ids':[sid,other],'years':[2041],'revisions':{sid:0,other:1}}).json()
-            for _ in range(100):
-                task=api.get(URL+'/api/tasks/'+job['id']).json()
-                if task['status']=='complete':break
-                time.sleep(.1)
-            page.goto(URL+'/#evaluation/'+job['id']);expect(page.locator('#scene-title')).to_have_text('Baseline')
-            page.locator('[data-layer=ndvi]').click();page.locator('[data-comparison-field=mean]').click();expect(target).to_have_attribute('fill',blend('ece6c7','336d48',(avg+.1)/.9))
             for width,height in [(1024,768),(390,844),(360,800)]:
                 page.set_viewport_size({'width':width,'height':height});expect(page.locator('[data-comparison-field=stddev]')).to_be_visible();page.locator('[data-comparison-field=stddev]').click();expect(page.locator('#scene-title')).to_have_text('Spatial variation');assert page.evaluate('document.documentElement.scrollWidth<=innerWidth');page.screenshot(path=str(OUT/f'spatial-{width}.png'))
             page.goto(URL+f'/#compare/{sid},{other}?year=2041&layer=ndvi&field=mean');expect(page.locator('#scene-title')).to_have_text('Spatial mean')
             assert not errors,errors
-            report={'ok':True,'checks':['per-cell mean and population standard deviation colors','geometry and viewport preserved','tooltip design counts','missing values remain gray','categorical averaging disabled','year changes preserve field view and saved clocks','saved evaluation spatial fields','desktop and mobile controls','direct mean-map link'],'javascript_errors':errors}
+            report={'ok':True,'checks':['per-cell mean and population standard deviation colors','geometry and viewport preserved','tooltip design counts','missing values remain gray','categorical averaging disabled','year changes preserve field view and saved clocks','desktop and mobile controls','direct mean-map link','timeline curves, selected design and keyboard year sync','standard-deviation band coordinates and missing-data gaps'],'javascript_errors':errors}
             (OUT/'spatial-comparison.json').write_text(json.dumps(report,indent=2));print(json.dumps(report));browser.close()
     finally:process.terminate();process.wait(timeout=15)

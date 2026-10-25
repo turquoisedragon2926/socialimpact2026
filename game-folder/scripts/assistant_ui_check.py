@@ -34,20 +34,15 @@ with tempfile.TemporaryDirectory() as runtime:
             # Exercise the actual renderer with untrusted HTML and Markdown.
             page.evaluate("""async()=>{const {renderMarkdown}=await import('/static/assistant-ui.js');window.safeOutput=renderMarkdown('| A | B |\\n|---|---|\\n| 1 | 2 |\\n\\n```text\\na -> b\\n```\\n<img src=x onerror=alert(1)><script>alert(2)</script>[bad](javascript:alert(3))');}""")
             safe=page.evaluate('window.safeOutput');assert '<table>' in safe and '<pre>' in safe and '<script' not in safe and '<img' not in safe and 'href="javascript:' not in safe
-            close_assistant();page.locator('#background-compare').click();page.locator('#evaluation-years').fill('2041, 2051');page.locator('#evaluation-form button').click();expect(page.locator('#assistant-panel')).to_be_visible();close_assistant()
-            tasks=api.get(URL+'/api/tasks').json();task=next(t for t in tasks if t['kind']=='evaluation')
-            page.goto(URL+f'/#scene/{sid}');expect(page.locator('#year-label')).to_have_text('2021')
-            for _ in range(100):
-                task=api.get(URL+'/api/tasks/'+task['id']).json()
-                if task['status']=='complete':break
-                time.sleep(.1)
-            assert task['status']=='complete';assert api.get(URL+f'/api/scenes/{sid}').json()['selected_year']==2021
-            page.goto(URL+'/#evaluation/'+task['id']);expect(page.locator('#comparison-revision')).to_contain_text('Saved snapshot')
+            close_assistant()
+            page.locator('#compare-year').fill('2051');page.locator('#compare-year').press('Tab');expect(page.locator('#year-label')).to_have_text('2051')
+            assert api.get(URL+f'/api/scenes/{sid}').json()['selected_year']==2021
+            expect(page.locator('#assistant-tasks,#background-compare')).to_have_count(0)
             measurements=[]
             for width,height in [(1440,1000),(1024,768),(390,844),(360,800)]:
                 page.set_viewport_size({'width':width,'height':height});close_assistant() if page.locator('#assistant-panel').is_visible() else None
                 assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),width
-                boxes={s:page.locator(s).bounding_box() for s in ['.design-navigator','.comparison-summary','.map-view-control','.comparison-clock','.topbar','.leaflet-control-zoom']}
+                boxes={s:page.locator(s).bounding_box() for s in ['.design-navigator','.comparison-summary','.map-view-control','.comparison-clock','.leaflet-control-zoom']}
                 def overlap(a,b): return min(a['x']+a['width'],b['x']+b['width'])>max(a['x'],b['x']) and min(a['y']+a['height'],b['y']+b['height'])>max(a['y'],b['y'])
                 keys=list(boxes)
                 for i,a in enumerate(keys):
@@ -56,8 +51,6 @@ with tempfile.TemporaryDirectory() as runtime:
                 page.screenshot(animations='disabled',path=str(OUT/f'comparison-{width}.png'))
                 page.locator('#assistant-toggle').click();assert page.evaluate('document.documentElement.scrollWidth<=innerWidth');page.screenshot(animations='disabled',path=str(OUT/f'assistant-{width}.png'));close_assistant()
             page.locator('#assistant-toggle').click()
-            page.locator('#assistant-input').fill('/tasks');page.locator('#assistant-input').press('Enter')
-            expect(page.locator('#assistant-tasks')).to_be_visible();expect(page.locator('.task-card')).to_have_count(1)
             expect(page.locator('#assistant-form')).to_be_visible();assert page.locator('.assistant-tabs,.assistant-heading,#new-conversation').count()==0
             close_assistant()
             # A deterministic assistant transport exercises UI lifecycle; writes still use real APIs.
@@ -82,7 +75,7 @@ with tempfile.TemporaryDirectory() as runtime:
             page.route('**/api/tasks**',task_routes)
             page.route('**/api/assistant',assistant_route)
             page.route('**/api/conversations/ui-conversation',lambda route:route.fulfill(json={'id':'ui-conversation','history':state['history']}))
-            page.locator('#assistant-toggle').click();page.locator('#back-to-conversation').click() if page.locator('#assistant-tasks').is_visible() else None;page.locator('#assistant-input').fill('Change selected land');page.locator('#assistant-input').press('Shift+Enter');page.locator('#assistant-input').type('Keep the year.');expect(page.locator('#assistant-input')).to_have_value('Change selected land\nKeep the year.');page.locator('#assistant-input').press('Enter');assert state['posts'][-1]['message']=='Change selected land\nKeep the year.';assert page.locator('#assistant-send').count()==0
+            page.locator('#assistant-toggle').click();page.locator('#assistant-input').fill('Change selected land');page.locator('#assistant-input').press('Shift+Enter');page.locator('#assistant-input').type('Keep the year.');expect(page.locator('#assistant-input')).to_have_value('Change selected land\nKeep the year.');page.locator('#assistant-input').press('Enter');assert state['posts'][-1]['message']=='Change selected land\nKeep the year.';assert page.locator('#assistant-send').count()==0
             expect(page.locator('#assistant-toggle')).to_contain_text('running');close_assistant()
             expect(page.locator('#assistant-toggle')).to_contain_text('running')
             page.set_viewport_size({'width':360,'height':800});assert page.evaluate('document.documentElement.scrollWidth<=innerWidth');page.set_viewport_size({'width':1440,'height':1000})
@@ -101,6 +94,6 @@ with tempfile.TemporaryDirectory() as runtime:
             close_assistant();page.keyboard.press('ControlOrMeta+z');expect(page.locator('#save-status')).to_have_text('All changes saved')
             assert api.get(URL+f'/api/scenes/{sid}').json()['actions']==[]
             assert not errors,errors
-            (OUT/'assistant-ui.json').write_text(json.dumps({'ok':True,'measurements':measurements,'javascript_errors':errors},indent=2));print('Comparison, safe Markdown, independent evaluation and four viewport checks passed.')
+            (OUT/'assistant-ui.json').write_text(json.dumps({'ok':True,'measurements':measurements,'javascript_errors':errors},indent=2));print('Comparison, safe Markdown, on-demand comparison and four viewport checks passed.')
             browser.close()
     finally:proc.terminate();proc.wait(timeout=15)

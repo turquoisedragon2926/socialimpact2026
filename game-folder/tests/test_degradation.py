@@ -74,7 +74,7 @@ def test_synthetic_trend_state_performance_and_warmup():
     assert result[2]['status']=='stable'
     # Poor performance alone is stressed, not declining in the 3-class table.
     assert result[3]['performance']=='declining' and result[3]['status']=='stable'
-    assert p.assess([increasing[:12]],['trees'])[0]['status']=='unknown'
+    assert p.assess([increasing[:12]],['trees'])[0]['status']=='stable'
     assert p.assess([[None]*13],['trees'])[0]['status']=='unknown'
     assert p.assess([[.4]*13],['water'])[0]['status']=='unknown'
 
@@ -129,7 +129,7 @@ def test_restoration_and_reset_at_fixed_assessment_year():
     assert out['cells'][0]['degradation']['status']=='improving'
     reset=evaluate(b,[],2033)
     assert reset['cells'][0]['degradation']['status']=='stable'
-    assert evaluate(b,[],2021)['cells'][0]['degradation']['status']=='unknown'
+    assert evaluate(b,[],2021)['cells'][0]['degradation']['status']=='stable'
 
 
 def test_no_fake_initial_ndvi_after_immediate_surface_replacement():
@@ -160,3 +160,38 @@ def test_long_productivity_series_remains_live():
     assert after['ndvi'] < before['ndvi']
     assert after['degradation']['productivity']['samples']==81
     assert after['degradation']['productivity']['slope'] < 0
+
+
+@pytest.mark.parametrize('samples', [1, 9, 10, 12])
+def test_initial_stability_is_explicit_and_expires(samples):
+    declining=np.linspace(.8,.2,13)
+    early=p.assess([declining[:samples]], ['trees'])[0]
+    assert early['status']=='stable'
+    assert early['status_basis']=='assumed_stable'
+    assert early['state']=='unknown' and early['state_class_change'] is None
+    assessed=p.assess([declining], ['trees'])[0]
+    assert assessed['status']=='declining'
+    assert assessed['status_basis']=='calculated'
+
+
+@pytest.mark.parametrize('year', [2021, 2032, 2033])
+def test_initial_assumption_preserves_missing_data_and_water(year):
+    for b in [baseline(ndvi=None), baseline('water'), baseline(ndvi=0)]:
+        result=evaluate(b, [], year)['cells'][0]['degradation']
+        assert result['productivity']['status']=='unknown'
+        assert result['productivity']['status_basis']=='unavailable'
+        assert result['status']=='unknown'
+    assert evaluate(baseline(soc=None), [], year)['cells'][0]['degradation']['status']=='unknown'
+    assert evaluate(baseline(), [edit('water')], year)['cells'][0]['degradation']['productivity']['status']=='unknown'
+
+
+def test_initial_assumption_drives_map_without_inventing_coverage():
+    b=baseline()
+    initial=evaluate(b, [], 2021)
+    assert initial['metrics']['degradation_ha']['stable']==2
+    assert initial['cells'][0]['degradation']['productivity']['unavailable_reason'] is None
+    assert evaluate(b, [edit('built')], 2021)['cells'][0]['degradation']['status']=='declining'
+    assert evaluate(baseline('built',.15), [edit('trees')], 2021)['cells'][0]['degradation']['status']=='improving'
+    b['cells'][0]['coverage']['ndvi']=.5
+    result=evaluate(b, [], 2021)['metrics']['degradation_ha']
+    assert result['stable']==1 and result['unknown']==1

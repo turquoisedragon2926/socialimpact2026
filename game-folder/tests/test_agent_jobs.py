@@ -8,7 +8,7 @@ import jobs
 import server
 from agent_tools import build_tools
 from comparison import distribution
-from schemas import AssistantRequest, EvaluationRequest
+from schemas import AssistantRequest
 from services import ScenarioService, ServiceError
 from test_api import client, create, register
 
@@ -35,28 +35,6 @@ def test_distribution_is_between_designs_and_excludes_unknown():
     assert distribution(data)['simulated_ndvi']['mean'] is None
 
 
-def test_background_snapshot_survives_edit_and_deletion(client,monkeypatch):
-    sid,svc,manager=workspace(client)
-    started=threading.Event();release=threading.Event();original=jobs.compare_snapshots
-    def held(*args):
-        started.set();assert release.wait(3)
-        return original(*args)
-    monkeypatch.setattr(jobs,'compare_snapshots',held)
-    expected=svc.evaluate(sid,2041)['metrics']
-    task=manager.evaluate(svc,EvaluationRequest(scene_ids=[sid],years=[2041],revisions={sid:0}))
-    assert started.wait(3)
-    assert client.patch('/api/scenes/'+sid,json={'revision':0,'selected_year':2035}).status_code==200
-    assert client.delete('/api/scenes/'+sid).status_code==200
-    release.set();result=wait_task(manager,svc.user_id,task['id'])
-    assert result['status']=='complete'
-    saved=result['result']['evaluations'][0]['scenes'][0]
-    assert saved['revision']==0 and saved['metrics']==expected
-    assert result['result']['snapshots'][0]['actions']==[]
-    client.post('/api/logout');register(client,'outsider@example.org')
-    assert client.get('/api/tasks/'+task['id']).status_code==404
-    assert client.post('/api/tasks/'+task['id']+'/cancel').status_code==404
-
-
 def test_shared_agent_tools_conflict_undo_and_missing_coverage(client):
     sid,svc,manager=workspace(client)
     output={}
@@ -76,7 +54,6 @@ def test_shared_agent_tools_conflict_undo_and_missing_coverage(client):
     assert output['invalid']['status']==422 and output['undo']['revision']==2
     assert svc.get(sid)['actions']==[]
     coverage=output['inspect']['coverage'];assert 0<coverage['soil_covered_ha']<coverage['total_area_ha']
-    with pytest.raises(ServiceError):manager.evaluate(svc,EvaluationRequest(scene_ids=[sid],years=[2041],revisions={sid:0}))
 
 
 def test_cancellation_blocks_later_mutations_and_retains_commits(client):
@@ -114,10 +91,10 @@ def test_conversation_serialization_stop_and_owner(client,monkeypatch):
 
 def test_restart_marks_unfinished_jobs_without_losing_completed_results(client):
     sid,svc,manager=workspace(client)
-    task=manager.submit(svc.user_id,'evaluation',{},lambda context:{'verified':True})
+    task=manager.submit(svc.user_id,'assistant',{},lambda context:{'verified':True})
     assert wait_task(manager,svc.user_id,task['id'])['status']=='complete'
     with server.db() as con:
-        con.execute("INSERT INTO work_jobs(id,user_id,kind,status,message,payload,created,updated) VALUES (?,?,?,'running','Working','{}',0,0)",('interrupted',svc.user_id,'evaluation'))
+        con.execute("INSERT INTO work_jobs(id,user_id,kind,status,message,payload,created,updated) VALUES (?,?,?,'running','Working','{}',0,0)",('interrupted',svc.user_id,'assistant'))
     restarted=jobs.JobManager(server.db)
     try:
         assert restarted.get(svc.user_id,'interrupted')['status']=='interrupted'
@@ -155,3 +132,22 @@ def test_agent_cancellation_retrieves_concurrently_finished_stream(client,monkey
     task=manager.submit(svc.user_id,'assistant',{},work)
     assert wait_task(manager,svc.user_id,task['id'])['status']=='cancelled'
     assert 'Task exception was never retrieved' not in caplog.text
+
+
+def test_retired_evaluations_are_unavailable_and_live_comparison_works(client):
+    import json
+    sid,svc,manager=workspace(client)
+    assert client.post('/api/evaluations',json={'scene_ids':[sid],'years':[2041],'revisions':{sid:0}}).status_code==404
+    # Keep old records on disk, but do not expose them as current assistant work.
+    with server.db() as con:
+        con.execute("INSERT INTO work_jobs(id,user_id,kind,status,message,payload,created,updated) VALUES (?,?,?,'complete','Complete','{}',0,0)",('legacy-evaluation',svc.user_id,'evaluation'))
+    assert client.get('/api/tasks/legacy-evaluation').status_code==404
+    assert all(t['kind']=='assistant' for t in client.get('/api/tasks').json())
+    tools=build_tools(svc,manager,None)
+    assert not {'start_evaluation','task_status','list_tasks','cancel_task'} & {t.name for t in tools}
+    other=svc.clone(sid)['id']
+    for year in (2031,2046,2053):
+        response=client.post('/api/compare',json={'scene_ids':[sid,other],'year':year})
+        assert response.status_code==200
+        assert response.json()['year']==year
+    assert svc.get(sid)['selected_year']==2021

@@ -35,16 +35,10 @@ with tempfile.TemporaryDirectory() as runtime:
         base=next(s for s in scenes if s['name']=='Live baseline');alt=next(s for s in scenes if s['name']=='Live alternative')
         scene=svc.get(alt['id']);cell=next(c for c in scene['baseline']['cells'] if c['soc'] is not None and c['fractions'].get('trees',0)>.5)
         context={'scene_id':alt['id'],'selected_cells':[cell['id']],'year':2021,'layer':'cover'}
-        turn('In the current existing alternative, change the selected cell to built land in 2021 as one intervention. Compare both designs at 2041, then start a background evaluation for both at 2041 and 2051. Report the captured revisions, soil coverage, assessed/unassessed hectares and comparison metrics; link the evaluation. Do not change the visible year.',context)
+        turn('In the current existing alternative, change the selected cell to built land in 2021 as one intervention. Compare both designs at 2041 and 2051. Report soil coverage, assessed/unassessed hectares and comparison metrics; link the comparisons. Do not change the visible year.',context)
         edited=svc.get(alt['id']);assert len(edited['actions'])==1 and edited['actions'][0]['cover']=='built' and edited['actions'][0]['cell_ids']==[cell['id']]
         assert svc.get(base['id'])['actions']==[]
-        tasks=c.get('/api/tasks').json();evaluation=next(t for t in tasks if t['kind']=='evaluation')
-        for _ in range(400):
-            evaluation=c.get('/api/tasks/'+evaluation['id']+'?result=true').json()
-            if evaluation['status']=='complete':break
-            time.sleep(.05)
-        assert evaluation['status']=='complete'
-        result=evaluation['result']['evaluations'][0]
+        result=c.post('/api/compare',json={'scene_ids':[base['id'],alt['id']],'year':2041}).json()
         for design in result['scenes']:
             assert design['metrics']==svc.evaluate(design['id'],2041)['metrics']
         carbons=[d['metrics']['carbon_tonnes'] for d in result['scenes']]
@@ -61,10 +55,8 @@ with tempfile.TemporaryDirectory() as runtime:
             tonnes=sum(c['soc']*originals[c['id']]['area_ha']*originals[c['id']]['coverage']['soc'] for c in design['cells'] if c['soc'] is not None)
             assert math.isclose(tonnes,design['metrics']['carbon_tonnes'])
         report['verified_metrics']={d['name']:d['metrics'] for d in result['scenes']}
-        turn('Read the completed background evaluation and explain its 2041 results using a small Markdown table including unassessed area. Then undo the single intervention in Live alternative and verify it has no actions left. Do not discard or replace the saved evaluation; explain that its revision remains historical.',context)
+        turn('Compare both current designs at 2041 and explain the results using a small Markdown table including unassessed area. Then undo the single intervention in Live alternative and verify it has no actions left.',context)
         assert svc.get(alt['id'])['actions']==[]
-        saved=c.get('/api/tasks/'+evaluation['id']+'?result=true').json()
-        assert saved['result']==evaluation['result']
-        report['checks']=['Real agent created and duplicated projects','Existing design edited through shared revisioned tools','Baseline unchanged','Agent submitted multi-year background evaluation','Results equal canonical evaluation','Independent arithmetic verifies between-design mean and reference delta','Visible year unchanged','Agent undo removed intervention','Saved historical results unchanged after undo']
+        report['checks']=['Real agent created and duplicated projects','Existing design edited through shared revisioned tools','Baseline unchanged','Agent compared requested years','Results equal canonical evaluation','Independent arithmetic verifies between-design mean and reference delta','Visible year unchanged','Agent undo removed intervention']
         report['usage']={k:sum(t['result']['usage'][k] for t in report['turns']) for k in ('input_tokens','output_tokens','total_tokens')}
         report['ok']=True;(OUT/'agent-live.json').write_text(json.dumps(report,indent=2));print(json.dumps({'ok':True,'usage':report['usage'],'checks':report['checks']}),flush=True)

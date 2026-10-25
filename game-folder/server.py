@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 import model
 from services import ScenarioService, ServiceError
 from schemas import NewScene, ScenePatch, Action, Revision, Clone, Compare
-from schemas import EvaluationRequest, AssistantRequest
+from schemas import AssistantRequest, CompareTimeline
 from jobs import JobManager
 import assistant
 from sources import validate_bounds, ROOT
@@ -229,6 +229,11 @@ def action(scene_id: str, body: Action, request: Request):
     return ScenarioService(db, current_user(request)["id"]).act(scene_id, body)
 
 
+@app.post("/api/scenes/{scene_id}/branch")
+def branch_scene(scene_id: str, body: Action, request: Request):
+    return ScenarioService(db, current_user(request)["id"]).act(scene_id, body, branch=True)
+
+
 @app.post("/api/scenes/{scene_id}/undo")
 def undo(scene_id: str, body: Revision, request: Request):
     return ScenarioService(db, current_user(request)["id"]).undo(scene_id, body)
@@ -264,20 +269,24 @@ def compare(body: Compare, request: Request):
     return ScenarioService(db, current_user(request)["id"]).compare(body)
 
 
+@app.post("/api/compare/timeline")
+def compare_timeline(body: CompareTimeline, request: Request):
+    return ScenarioService(db, current_user(request)["id"]).comparison_timeline(body)
+
+
 @app.get("/api/search")
 def search(q: str, request: Request):
     return ScenarioService(db, current_user(request)["id"]).search(q)
 
 
+@app.get('/api/model/land-cover-matrix')
+def land_cover_matrix():
+    return FileResponse(ROOT / 'data/trends-landcover-matrix.json', media_type='application/json')
+
+
 @app.get("/")
 def index():
     return FileResponse(ROOT / "static/index.html")
-
-
-@app.post('/api/evaluations')
-def background_evaluation(body: EvaluationRequest, request: Request):
-    service = ScenarioService(db, current_user(request)['id'])
-    return request.app.state.jobs.evaluate(service, body)
 
 
 @app.post('/api/assistant')

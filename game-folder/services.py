@@ -99,7 +99,7 @@ class ScenarioService:
             raise ServiceError(422, 'Year cannot precede the baseline.')
         return self._update(item, **updates)
 
-    def act(self, scene_id, body: Action):
+    def act(self, scene_id, body: Action, branch=False):
         item = self.get(scene_id)
         if body.revision != item['revision']:
             raise ServiceError(409, 'Scene changed. Reload before editing.')
@@ -107,9 +107,22 @@ class ScenarioService:
         if body.cover not in model.COVERS or any((c not in cells or not cells[c]['fractions'] for c in body.cell_ids)):
             raise ServiceError(422, 'Select mapped cells and a supported land cover.')
         latest = max([item['baseline']['year']] + [a['year'] for a in item['actions']])
-        if body.year < latest:
-            raise ServiceError(422, f'Add edits at {latest} or later. Undo later edits to change the past.')
+        if body.year < item['baseline']['year']:
+            raise ServiceError(422, 'Intervention cannot precede the baseline.')
+        if body.year < latest and not branch:
+            raise ServiceError(422, f'Add edits at {latest} or later, or branch the design to edit its past.')
         new_action = {'id': uuid4().hex, 'cell_ids': list(dict.fromkeys(body.cell_ids)), 'cover': body.cover, 'year': body.year, 'note': body.note.strip()}
+        if body.year < latest:
+            new_id, now = uuid4().hex, time.time()
+            actions = [a for a in item['actions'] if a['year'] <= body.year] + [new_action]
+            with self.db() as con:
+                con.execute('BEGIN IMMEDIATE')
+                current = con.execute('SELECT revision FROM scenes WHERE id=? AND user_id=?', (scene_id, self.user_id)).fetchone()
+                if not current or current['revision'] != body.revision:
+                    raise ServiceError(409, 'Scene changed. Reload before branching.')
+                con.execute('INSERT INTO scenes(id,user_id,name,baseline_id,actions,climate,selected_year,model_version,ndvi_model_version,created,updated) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+                            (new_id,self.user_id,item['name'][:75]+f' · branch {body.year}',item['baseline_id'],json.dumps(actions),item['climate'],body.year,item['model_version'],item['ndvi_model_version'],now,now))
+            return {'id': new_id, 'revision': 0, 'branched_from': scene_id}
         return self._update(item, actions=json.dumps(item['actions'] + [new_action]), selected_year=body.year)
 
     def undo(self, scene_id, body: Revision):
@@ -201,6 +214,42 @@ class ScenarioService:
         if len(items) < 2:
             raise ServiceError(422, 'Select at least two distinct designs.')
         return compare_snapshots(items, body.year)
+
+    def comparison_timeline(self, body):
+        """Compact metrics on shared years from one immutable set of revisions."""
+        items = self.snapshots(body.scene_ids, body.revisions)
+        if len(items) < 2:
+            raise ServiceError(422, 'Select at least two distinct designs.')
+        first = items[0]
+        start = first['baseline']['year']
+        if body.end_year < start:
+            raise ServiceError(422, 'Timeline must end at or after the baseline.')
+        end = max(body.end_year, start + 30,
+                  max((a['year'] + 20 for s in items for a in s['actions']), default=start))
+        years = list(range(start, end + 1))
+        if len(years) > body.max_points:
+            critical = sorted({start, end, body.end_year} | {
+                y for s in items for a in s['actions']
+                for y in (a['year'] - 1, a['year'], a['year'] + 1, a['year'] + 10, a['year'] + 20)
+                if start <= y <= end})
+            if len(critical) > body.max_points:
+                critical = [critical[round(i * (len(critical)-1) / (body.max_points-1))]
+                            for i in range(body.max_points)]
+            chosen = set(critical)
+            for i in range(body.max_points):
+                if len(chosen) >= body.max_points:
+                    break
+                chosen.add(round(start + i * (end-start) / (body.max_points-1)))
+            years = sorted(chosen)
+        points = []
+        for year in years:
+            def metrics(actions):
+                return model.evaluate(first['baseline'], actions, year, first['climate'], first['ndvi_model_version'])['metrics']
+            scenes = [{'id': s['id'], 'name': s['name'], 'metrics': metrics(s['actions'])} for s in items]
+            points.append({'year': year, 'scenes': scenes, 'reference': {'metrics': metrics([])},
+                           'distribution': comparison.distribution(scenes)})
+        return {'points': points, 'revisions': {s['id']: s['revision'] for s in items},
+                'start_year': start, 'end_year': end, 'sampled': len(years) < end-start+1}
 
     def search(self, q):
         global LAST_SEARCH

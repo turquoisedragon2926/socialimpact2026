@@ -11,9 +11,9 @@ export function createAssistantUI({api,post,escapeHtml:esc,context,onMutation,on
   const launcher=document.createElement('button');launcher.id='assistant-toggle';launcher.hidden=true;launcher.setAttribute('aria-label','Open assistant');launcher.setAttribute('aria-controls','assistant-panel');launcher.setAttribute('aria-expanded','false');
   launcher.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-3 3V11.5A7.5 7.5 0 0 1 9.5 4h3A7.5 7.5 0 0 1 20 11.5Z"/><path d="M7 10h8M7 14h5"/></svg><span id="assistant-running" class="sr-only"></span>';
   document.body.append(launcher);
-  root.innerHTML=`<button id="close-assistant" class="ghost" aria-label="Close assistant">✕</button><section id="assistant-chat"><div id="assistant-messages" aria-live="polite"></div></section><section id="assistant-tasks" hidden><div class="row between"><strong>Evaluations</strong><button id="back-to-conversation" class="ghost small" aria-label="Back to conversation">←</button></div><div id="task-list"></div></section><div id="assistant-progress" role="status"></div><form id="assistant-form"><label class="sr-only" for="assistant-input">Message the assistant. Enter sends; Shift+Enter inserts a new line; Escape stops the current response. Commands: /clear for a new conversation; /tasks for evaluations.</label><textarea id="assistant-input" placeholder="Add an airport in northeast corner of the city" required maxlength="16000" rows="2"></textarea></form>`;
+  root.innerHTML=`<button id="close-assistant" class="ghost" aria-label="Close assistant">✕</button><section id="assistant-chat"><div id="assistant-messages" aria-live="polite"></div></section><div id="assistant-progress" role="status"></div><form id="assistant-form"><label class="sr-only" for="assistant-input">Message the assistant. Enter sends; Shift+Enter inserts a new line; Escape stops the current response. Use /clear for a new conversation.</label><textarea id="assistant-input" placeholder="Add an airport in northeast corner of the city" required maxlength="16000" rows="2"></textarea></form>`;
   const $=id=>document.getElementById(id),terminal=status=>['complete','failed','cancelled','interrupted'].includes(status);
-  let user=null,cid=null,tasks=[],history=[],active=null,timer=null,busy=false,lastHistory='',seen=new Set(),tab='chat',generation=0,refreshing=false,initialized=false,errorMessage='',expanded=false,motion=null;
+  let user=null,cid=null,tasks=[],history=[],active=null,timer=null,busy=false,lastHistory='',seen=new Set(),generation=0,refreshing=false,initialized=false,errorMessage='',expanded=false,motion=null;
   function displayHistory(){
     const serialized=JSON.stringify(history);if(serialized===lastHistory)return;lastHistory=serialized;
     const el=$('assistant-messages'),nearBottom=el.scrollHeight-el.scrollTop-el.clientHeight<70;
@@ -31,15 +31,13 @@ export function createAssistantUI({api,post,escapeHtml:esc,context,onMutation,on
     $('assistant-progress').textContent=errorMessage||active?.message||'';
     const recent=tasks.find(t=>t.kind==='assistant'&&t.payload.conversation_id===cid);
     if(!active&&!errorMessage&&recent&&['failed','interrupted','cancelled'].includes(recent.status))$('assistant-progress').textContent=recent.message;
-    $('task-list').innerHTML=tasks.filter(t=>t.kind==='evaluation').map(t=>`<article class="task-card"><strong>${t.payload.designs.map(d=>esc(d.name)).join(' / ')}</strong><p>${t.payload.designs.map(d=>`revision ${d.revision}`).join(' · ')} · ${t.payload.years.join(', ')}</p><progress max="1" value="${t.progress}"></progress><p>${esc(t.message)}</p><div class="row"><a href="#evaluation/${t.id}">${t.status==='complete'?'View saved results':'View progress'} ↗</a>${!terminal(t.status)?`<button class="small" data-stop-task="${t.id}">Stop</button>`:''}</div></article>`).join('')||'<p class="muted tiny">No evaluations yet. They run independently of your map and playback.</p>';
-    root.querySelectorAll('[data-stop-task]').forEach(b=>b.onclick=()=>stopTask(b.dataset.stopTask));
     displayHistory();
   }
   async function refresh(){
     if(!user||refreshing)return;const version=generation;refreshing=true;
     try{
       const next=await api('/tasks');if(version!==generation)return;
-      tasks=next;
+      tasks=next.filter(t=>t.kind==='assistant');
       const recent=tasks.find(t=>t.kind==='assistant'&&t.payload.conversation_id===cid);
       if(recent){const detail=await api('/tasks/'+recent.id);if(version!==generation)return;Object.assign(recent,detail);}
       if(cid){const requested=cid,c=await api('/conversations/'+requested);if(version!==generation||requested!==cid)return;history=c.history;}
@@ -58,15 +56,13 @@ export function createAssistantUI({api,post,escapeHtml:esc,context,onMutation,on
     motion=root.animate(opening?[{opacity:0,transform:'translateY(12px) scale(.96)'},{opacity:1,transform:'none'}]:[{opacity:1,transform:'none'},{opacity:0,transform:'translateY(12px) scale(.96)'}],{duration,easing:'cubic-bezier(.2,.8,.2,1)'});
     motion.onfinish=()=>{if(!expanded)root.hidden=true;motion=null;};
   }
-  function open(section=tab){selectTab(section);expanded=true;root.hidden=false;root.inert=false;render();animate(true);$('assistant-input').focus({preventScroll:true});}
+  function open(){expanded=true;root.hidden=false;root.inert=false;render();animate(true);$('assistant-input').focus({preventScroll:true});}
   function close(){expanded=false;root.inert=true;render();if(!root.hidden)animate(false);launcher.focus({preventScroll:true});}
   function activate(id){
     if(user!==id){generation++;user=id;cid=id?localStorage.getItem('land-conversation-'+id):null;history=[];tasks=[];seen=new Set();initialized=false;errorMessage='';lastHistory='';clearInterval(timer);if(id){refresh();timer=setInterval(refresh,1500);}else close();}
     launcher.hidden=!id;launcher.onclick=()=>expanded?close():open();render();
   }
   $('close-assistant').onclick=close;
-  function selectTab(section){tab=section;$('assistant-chat').hidden=tab!=='chat';$('assistant-tasks').hidden=tab!=='tasks';}
-  $('back-to-conversation').onclick=()=>selectTab('chat');
   $('assistant-input').oninput=updateComposer;
   $('assistant-input').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('assistant-form').requestSubmit();}};
   async function stopTask(id){try{await post(`/tasks/${id}/cancel`);await refresh();}catch(e){errorMessage=e.message;render();}}
@@ -74,13 +70,12 @@ export function createAssistantUI({api,post,escapeHtml:esc,context,onMutation,on
   $('assistant-form').onsubmit=async e=>{
     e.preventDefault();const message=$('assistant-input').value.trim();if(!message||busy)return;
     const command=message.toLowerCase();
-    if(command==='/tasks'){$('assistant-input').value='';errorMessage='';selectTab('tasks');render();await refresh();return;}
     if(command==='/clear'){
       if(active){errorMessage='Press Escape to stop the current response before clearing.';render();return;}
-      generation++;errorMessage='';cid=null;history=[];lastHistory='';$('assistant-input').value='';localStorage.removeItem('land-conversation-'+user);selectTab('chat');render();return;
+      generation++;errorMessage='';cid=null;history=[];lastHistory='';$('assistant-input').value='';localStorage.removeItem('land-conversation-'+user);render();return;
     }
     if(active)return;
-    selectTab('chat');
+
     busy=true;errorMessage='';render();
     try{const job=await post('/assistant',{message,conversation_id:cid,context:context()});generation++;cid=job.payload.conversation_id;tasks=[job,...tasks.filter(t=>t.id!==job.id)];localStorage.setItem('land-conversation-'+user,cid);$('assistant-input').value='';await refresh();}
     catch(error){errorMessage=error.message;}

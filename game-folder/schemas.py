@@ -2,11 +2,6 @@
 from pydantic import BaseModel, Field
 from typing import Literal
 
-class EvaluationRequest(BaseModel):
-    scene_ids: list[str] = Field(min_length=1, max_length=12)
-    years: list[int] = Field(min_length=1, max_length=200)
-    revisions: dict[str, int]
-
 class ViewContext(BaseModel):
     scene_id: str | None = None
     comparison_ids: list[str] = Field(default_factory=list, max_length=12)
@@ -53,3 +48,9 @@ class Clone(BaseModel):
 class Compare(BaseModel):
     scene_ids: list[str] = Field(min_length=2, max_length=12)
     year: int
+
+class CompareTimeline(BaseModel):
+    scene_ids: list[str] = Field(min_length=2, max_length=12)
+    revisions: dict[str, int]
+    end_year: int
+    max_points: int = Field(default=32, ge=2, le=128)

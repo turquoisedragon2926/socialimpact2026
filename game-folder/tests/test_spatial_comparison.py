@@ -43,25 +43,6 @@ def test_comparison_fields_use_scenarios_not_reference_and_correct_year(client):
     assert client.get('/api/scenes/'+sid).json()['selected_year']==2021
 
 
-def test_older_saved_evaluation_uses_stored_cells_for_spatial_fields(client):
-    import json
-    import time
-    import server
-    register(client);sid=create(client)
-    task=client.post('/api/evaluations',json={'scene_ids':[sid],'years':[2041],'revisions':{sid:0}}).json()
-    for _ in range(100):
-        result=client.get('/api/tasks/'+task['id']+'?result=true').json()
-        if result['status']=='complete':break
-        time.sleep(.01)
-    saved=result['result'];expected=saved['evaluations'][0].pop('spatial_fields')
-    with server.db() as con:
-        con.execute('UPDATE work_jobs SET result=? WHERE id=?',(json.dumps(saved),task['id']))
-    # A deleted live design must not prevent deriving fields from its snapshot.
-    assert client.delete('/api/scenes/'+sid).status_code==200
-    restored=client.get('/api/tasks/'+task['id']+'?result=true').json()['result']['evaluations'][0]
-    assert restored['spatial_fields']==expected
-
-
 def test_agent_can_open_spatial_view_and_inspect_selected_field_cells(client):
     from test_agent_jobs import workspace, wait_task
     from agent_tools import build_tools

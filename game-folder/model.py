@@ -156,4 +156,4 @@ def evaluate(baseline, actions, year, climate="temperate_dry", ndvi_model_versio
                         "ndvi_change": (scenario_ndvi_sum-scenario_ndvi_baseline_sum)/scenario_ndvi_area if scenario_ndvi_area else None,
                         "simulated_ndvi_coverage_ha": scenario_ndvi_area,
                         "ndvi_coverage_ha": ndvi_area},
-            "assessment": "Simulated land degradation combines modeled productivity, net land-cover transitions and soil carbon using 1OAO. Productivity uses the evolving simulated NDVI series, with scenario-specific time windows and cover-only performance groups. Not an official or validated land-degradation assessment."}
+            "assessment": "Simulated land degradation combines modeled productivity, net land-cover transitions and soil carbon using 1OAO. Productivity is assumed stable before 13 annual samples where inputs are valid, then calculated from the evolving simulated NDVI series, with scenario-specific time windows and cover-only performance groups. Not an official or validated land-degradation assessment."}
