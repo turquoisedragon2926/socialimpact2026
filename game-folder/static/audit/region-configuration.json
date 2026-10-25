@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "checks": [
+    "2020 baseline selection",
+    "exact rectangle raster retrieval",
+    "145 m decision cells",
+    "chosen climate retained",
+    "cover and NDVI observations present",
+    "incompatible comparison disabled and API rejected"
+  ],
+  "cells": 16,
+  "warnings": [],
+  "javascript_errors": []
+}

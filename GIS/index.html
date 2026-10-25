@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fieldnotes · A GIS playground</title>
+<link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="style.css?v=5270f625246d">
+<script defer src="vendor/leaflet.js"></script><script defer src="boundaries.js?v=92bc1e04731c"></script><script defer src="app.js?v=a47d0a5ab1ee"></script>
+</head>
+<body>
+<header><div class="brand"><span class="brand-icon">◈</span> FIELDNOTES <span class="edition">/ GIS playground</span></div><span class="location">SAN FRANCISCO, CA <span class="live-dot"></span> Local data</span></header>
+<main>
+<aside class="sidebar">
+<div class="eyebrow">01 / EXPLORE A REAL PLACE</div>
+<h1>A place is more<br>than a map.</h1>
+<p class="intro">Terrain, public spaces, community facilities. GIS puts different kinds of information in the same geographic frame.</p>
+<div class="presets" aria-label="Map views"><button data-view="areas">Areas</button><button data-view="terrain">Terrain</button><button data-view="together" class="active">Together</button></div>
+<div class="section-label">LAYERS <span>Toggle to see what each adds</span></div>
+<label class="layer"><input id="terrain" type="checkbox" checked><span class="symbol terrain">▦</span><span><strong>Elevation</strong><small>RASTER · a grid of height values</small></span></label>
+<label class="layer"><input id="neighborhoods" type="checkbox" checked><span class="symbol areas">⬡</span><span><strong>Neighborhoods</strong><small>POLYGONS · <span id="neighborhood-count">…</span> analysis areas</small></span></label>
+<label class="layer"><input id="parks" type="checkbox" checked><span class="symbol parks">▰</span><span><strong>Parks & recreation land</strong><small>POLYGONS · <span id="park-count">…</span> property records</small></span></label>
+<label class="layer"><input id="libraries" type="checkbox" checked><span class="symbol libraries">●</span><span><strong>Library facilities</strong><small>POINTS · <span id="library-count">…</span> facility records</small></span></label>
+<div class="section-label boundary-heading">COMPARE BOUNDARIES</div>
+<p class="boundary-help">Stack the layers, or use Solo to compare one at a time.</p>
+<div class="boundary-row"><label class="layer"><input id="blocks" type="checkbox"><span class="symbol blocks">⬡</span><span><strong>Census blocks</strong><small id="blocks-status" role="status">Loading counts…</small></span></label><button data-solo="blocks" aria-label="Show census blocks alone">Solo</button></div>
+<div class="boundary-row"><label class="layer"><input id="parcels" type="checkbox"><span class="symbol parcels">▥</span><span><strong>Property parcels</strong><small id="parcels-status" role="status">Loading counts…</small></span></label><button data-solo="parcels" aria-label="Show property parcels alone">Solo</button></div>
+<button id="parcel-zoom" hidden>Zoom to lots around Dolores Park ↗</button>
+<div class="boundary-row"><label class="layer"><input id="zoning" type="checkbox"><span class="symbol zoning">▰</span><span><strong>Zoning districts</strong><small id="zoning-status" role="status">Loading counts…</small></span></label><button data-solo="zoning" aria-label="Show zoning districts alone">Solo</button></div>
+<div id="zoning-key" hidden><span style="--swatch:#c4aa58">Residential</span><span style="--swatch:#a8679a">Mixed use</span><span style="--swatch:#d56e56">Commercial</span><span style="--swatch:#8998b6">Industrial</span><span style="--swatch:#4e9b82">Public</span><span style="--swatch:#a88f9f">Mixed</span></div>
+<div class="boundary-row"><label class="layer"><input id="watersheds" type="checkbox"><span class="symbol watersheds">≈</span><span><strong>Urban watersheds</strong><small id="watersheds-status" role="status">Loading counts…</small></span></label><button data-solo="watersheds" aria-label="Show urban watersheds alone">Solo</button></div>
+<label class="outline-option"><input id="boundary-outlines" type="checkbox"> Outlines only for these four layers</label>
+<p id="boundary-message" class="boundary-help" role="status"></p>
+<div class="terrain-control"><label for="opacity">Terrain opacity <output id="opacity-value">85%</output></label><input id="opacity" type="range" min="0" max="100" value="85"></div>
+<section class="lesson"><span class="eyebrow">TRY THIS</span><h2 id="lesson-title">Stack the layers.</h2><p id="lesson-text">Click a green park, a blue facility dot, or a neighborhood. Every shape has a record behind it. Then turn on “Sample terrain” to inspect individual elevation cells.</p></section>
+<details class="sources"><summary>Where did this come from?</summary><p>Downloaded snapshots of <a href="https://data.sf.gov/d/j2bu-swwd" target="_blank" rel="noreferrer">DataSF neighborhoods</a>, <a href="https://data.sf.gov/d/gtr9-ntp6" target="_blank" rel="noreferrer">Recreation & Parks properties</a>, <a href="https://data.sf.gov/d/fhhu-wqa7" target="_blank" rel="noreferrer">library facilities</a>, and <a href="https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer" target="_blank" rel="noreferrer">USGS 3DEP elevation</a>.</p><p>Park data covers RPD properties, not every green space. Library facilities include support and leased sites, not just public branches. Analysis neighborhoods are reporting areas, not legal boundaries.</p><p>Additional boundaries: <a href="https://data.sf.gov/d/e2st-aufe">2020 Census blocks</a>, <a href="https://data.sf.gov/d/acdm-wktn">active map lots</a>, <a href="https://data.sf.gov/d/3i4a-hu95">zoning districts</a>, and <a href="https://www.sfpuc.gov/programs/san-franciscos-urban-watersheds/discover-your-watershed">SFPUC urban watersheds</a>. Parcels load locally as you zoom and pan. Watersheds use the Major_Drainage layer from SFPUC’s map.</p><a href="data/manifest.json">Original source manifest ↗</a><br><a href="data/boundaries-manifest.json">Boundary source manifest ↗</a></details>
+</aside>
+<section class="workspace" aria-label="Interactive GIS map">
+<div class="map-toolbar"><span><strong>San Francisco</strong><span class="muted"> / layered view</span></span><div><button id="sample" aria-pressed="false">⌖ Sample terrain</button><button id="reset">Reset view ↗</button></div></div>
+<div class="map-wrap"><div id="map" aria-label="Map of San Francisco"></div><div class="north">N<br>↑</div><div id="loading" role="status">Loading local GIS data…</div><div id="legend" class="legend"><strong>Ground elevation</strong><span>meters · USGS 3DEP</span><div class="gradient"></div><div class="ticks"><span>0</span><span>75</span><span>150</span><span>225</span><span>300 m</span></div></div></div>
+<div class="map-footer"><span id="cursor">Move across the map to see coordinates</span><span>WGS 84 coordinates · map in Web Mercator</span></div>
+</section>
+<aside class="inspector"><div class="eyebrow">02 / LOOK UNDER THE MAP</div><h2 id="inspect-title">Click a feature.</h2><p id="inspect-description">A map is the picture. GIS data is the geometry and information behind it.</p><div id="inspect-body"><div class="anatomy"><span>01</span><div><strong>Geometry</strong><p>Where is it? A point, a boundary, or a grid cell.</p></div></div><div class="anatomy"><span>02</span><div><strong>Attributes</strong><p>What do we know? A name, an address, a property type, or an elevation.</p></div></div><div class="anatomy"><span>03</span><div><strong>Layers</strong><p>Shared coordinates let different datasets line up.</p></div></div></div><div class="planning-note"><strong>From maps to planning</strong><p>Terrain could inform slope analysis. Parks describe one kind of land use. Facilities locate community resources. Combining them makes questions possible; it does not yet predict flooding or measure access.</p></div></aside>
+</main>
+</body></html>

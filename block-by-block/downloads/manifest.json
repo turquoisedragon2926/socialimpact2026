@@ -1,0 +1,27 @@
+[
+  {
+    "url": "https://github.com/louis-e/arnis/releases/download/v3.3.0/arnis-mac-universal.tar.gz",
+    "path": "downloads/arnis-mac-universal.tar.gz",
+    "bytes": 63300228,
+    "sha256": "83f444fae81cbb1cc9adf4901f904253d29551504cd465f02182bde349c389c4"
+  },
+  {
+    "url": "https://github.com/luanti-org/luanti/releases/download/5.17.0/luanti_5.17.0_macos12.3_arm64.zip",
+    "path": "downloads/luanti-arm64.zip",
+    "bytes": 13619805,
+    "sha256": "0ba118b537d3cc6fd07cd2268fef25e515fc6d87c27ad69b476144a8e28dba3c"
+  },
+  {
+    "url": "https://www.blockbyblock.org/s/Block-by-Block-Playbook-October-2025.pdf",
+    "path": "references/Block-by-Block-Playbook-October-2025.pdf",
+    "bytes": 10022635,
+    "sha256": "26915c53dc7a58e6fb1636fc3eabfdba3cc608feee85464cc7b023e4b1bac91d"
+  },
+  {
+    "url": "https://cdn.content.luanti.org/uploads/07e281dc96.zip",
+    "path": "downloads/mineclonia.zip",
+    "version": "0.124.1",
+    "bytes": 29891302,
+    "sha256": "6d1164a7c23fc6a75abc9520fe0e755a6a835f59d22dab287f5af6954b317627"
+  }
+]

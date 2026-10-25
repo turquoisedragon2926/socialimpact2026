@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "checks": [
+    "current model and input hashes match evidence",
+    "all eight report scenarios render",
+    "all saved live results equal audit",
+    "focused live restoration is green",
+    "focus and layer survive reload",
+    "report mobile layout"
+  ],
+  "javascript_errors": []
+}

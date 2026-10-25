@@ -1,0 +1,17 @@
+{
+  "commit": "7410cf18a231b4dd094bd90dc534951ef17b4275",
+  "downloads": 4173,
+  "id": 39603,
+  "max_minetest_version": null,
+  "min_minetest_version": {
+    "is_dev": false,
+    "name": "5.10",
+    "protocol_version": 46
+  },
+  "name": "0.124.1",
+  "release_date": "2026-10-21T22:14:17.617236",
+  "release_notes": "A number of bugfixes most importantly a general item duplication problem. Server owners may want to update asap.\n\n* Fix seed placement destroying nodes with \"air\" in their name [j-r]\n* Check for protection in mcl_farming:place_seed [j-r]\n* Fix sand eternally bouncing on fence gates [cora]\n* Fix crash with hopper in weird condition [cora]\n* Fix respawn repositioning [j-r]\n* Fix wandering trader sapling trade [xox]\n* Mob hook reeling fix [Fawki]\n* Fix invalid record itemstring in loot chests [amino]\n* Fix bamboo itemstring in mcl_fishing jungle loot [amino]\n* Fix sweet berry bush decoration registration [amino]\n* Fix soul sand itemstring in biome decoration definitions [amino]\n* Fix stone button itemstring in pillager outpost structure [amino]\n* Fix oak button doc alias [amino]\n* Fix daylight detector doc aliases [amino]\n* Fix \"ancient octupus\" painting alias [amino]\n* Fix size/param2 in pale oak schematics [nixnoxus]\n* Fix luacheck error [xox]\n* Add mcl_map_dross mod [amino]\n* Add LBM to remove bad map nodes [amino]\n* Add bad map entity removal handlers [cora]\n* Add another old mushroom node alias [cora]\n* Update itemstrings in schematics files [amino]\n* Make mcl_enchanting.is_book test more robust and use it throughout the codebase [cora, j-r]\n* Make farmland check use itemgroups instead of string.find [cora]\n* Clean up place seed function [cora]\n* Properly clear input list of single chests [cora]\n* Declare the mods its loot tables use [culmat]\n* Small fish() refactoring [Fawki]\n* Nitpick changes to movement.lua [xox]\n* Rename node -> nodepos [xox]\n* Other small changes [xox]\n* Remove commented out code in place seed func [cora]\n* Remove polish dictionary file [amino]\n* core.register_aliases[] -> core.registered_aliases[] [Freeman]",
+  "size": 29891302,
+  "title": "0.124.1",
+  "url": "https://cdn.content.luanti.org/uploads/07e281dc96.zip"
+}

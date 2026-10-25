@@ -1,0 +1,29 @@
+# Local configuration, credentials, and Python environments
+.DS_Store
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Accounts, sessions, local scenes, and generated test output
+runtime/
+test-results/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.log
+
+# Rebuild these optional GIS downloads using SETUP.md.
+/GIS/data/
+
+# Download from upstream; preserve the manifests and project scripts.
+/block-by-block/references/*.pdf
+
+# IDs in this manifest refer to one local user's SQLite database.
+/game-folder/static/audit/demo-scenes.json

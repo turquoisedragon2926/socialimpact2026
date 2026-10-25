@@ -1,0 +1,274 @@
+
+        ▄████████    ▄████████ ███▄▄▄▄    ▄█     ▄████████
+        ███    ███   ███    ███ ███▀▀▀██▄ ███    ███    ███
+        ███    ███   ███    ███ ███   ███ ███▌   ███    █▀
+        ███    ███  ▄███▄▄▄▄██▀ ███   ███ ███▌   ███
+      ▀███████████ ▀▀███▀▀▀▀▀   ███   ███ ███▌ ▀███████████
+        ███    ███ ▀███████████ ███   ███ ███           ███
+        ███    ███   ███    ███ ███   ███ ███     ▄█    ███
+        ███    █▀    ███    ███  ▀█   █▀  █▀    ▄████████▀
+                     ███    ███
+
+                          version 3.3.0
+                https://github.com/louis-e/arnis
+        
+Arnis - Generate real life cities in Minecraft
+
+Usage: arnis-mac-universal [OPTIONS]
+
+Options:
+      --bbox <BBOX>
+          Bounding box of the area (min_lat,min_lng,max_lat,max_lng). Required unless --file supplies a local .osm/.xml file to derive it from (terrain-only mode ignores --file, so it always requires --bbox)
+
+      --file <FILE>
+          JSON file containing OSM data (optional)
+
+      --save-json-file <SAVE_JSON_FILE>
+          JSON file to save OSM data to (optional)
+
+      --output-dir <PATH>
+          Output directory for the generated world (required for Java, optional for Bedrock). Use --output-dir (or the deprecated --path alias) to specify where the world is created
+
+      --bedrock
+          Generate a Bedrock Edition world (.mcworld) instead of Java Edition
+
+      --luanti
+          Generate a Luanti/Minetest world (map.sqlite) instead of Java Edition
+
+      --downloader <DOWNLOADER>
+          Downloader method (requests/curl/wget) (optional)
+          
+          [default: requests]
+
+      --scale <SCALE>
+          World scale to use, in blocks per meter (1.0 = real size). Ignored for --body moon/mars, which use their own fixed scale
+          
+          [default: 1]
+
+      --height-multiplier <HEIGHT_MULTIPLIER>
+          Multiplies terrain height: 2.0 makes hills twice as tall, 0.5 half as tall. Buildings and trees keep their size. Relief that no longer fits the build height is compressed to fit, as it is at 1.0
+          
+          [default: 1]
+
+      --body <BODY>
+          Celestial body to generate. moon and mars use NASA PDS elevation at a fixed low scale and have no OSM data, so every object option is ignored
+          
+          [default: earth]
+          [possible values: earth, moon, mars]
+
+      --projection <PROJECTION>
+          Projection mode for coordinate mapping. local: each generation starts at Minecraft (0,0) (default). web_mercator: Web Mercator centred on the bbox
+          
+          [default: local]
+
+      --one-world
+          Generate into one persistent Java world that every later run extends. --output-dir is then the saves folder. The first run fixes scale, ground level, terrain mode and build height; rotation must be 0
+
+      --world-name <WORLD_NAME>
+          Name of the world folder for --one-world (default "Arnis One World")
+
+      --ground-level <GROUND_LEVEL>
+          Ground level to use in the Minecraft world
+          
+          [default: -62]
+
+      --mode <MODE>
+          What to generate, mirroring the GUI's generation mode dropdown: geo-terrain: OSM objects on real elevation terrain (default) geo-only: OSM objects on flat ground terrain-only: real elevation terrain, no OSM or Overture objects (--overture has no effect)
+
+          Possible values:
+          - geo-terrain:  OSM objects on real elevation terrain
+          - geo-only:     OSM objects on flat ground
+          - terrain-only: Real elevation terrain without any OSM or Overture objects
+          
+          [default: geo-terrain]
+
+      --interior [<INTERIOR>]
+          Enable interior generation (optional, off unless requested)
+          
+          [default: false]
+          [possible values: true, false]
+
+      --fillground
+          Enable filling ground (optional)
+
+      --caves
+          Carve Minecraft-style caves into the filled ground: vanilla 1.21 noise caves and tunnel carvers, flooded pools and underground rivers, a lava sea at the bottom of the world, vanilla ores and eight themed cave biomes. Implies --fillground. Caves need rock to carve into: at the default ground level they only appear under terrain that rises above the lowest point of the area
+
+      --cave-asset-pack <DIR>
+          Directory of a cave asset pack (cave_pack.json plus Sponge .schem formations such as ice spikes, dripstone columns and amethyst clusters) stamped into --caves. Defaults to a `cave-pack` directory next to the executable when one exists; without either, caves keep their procedural decoration only
+
+      --cave-biomes <LIST>
+          Per-biome cave theme amounts as comma-separated `name=percent` pairs. Names: lush, dripstone, deepdark, mushroom, ice, amethyst, volcanic, coral. 100 is the default share, 0 turns the biome off, 200 roughly doubles its area. Depth and terrain gates (volcanic at the bottom, ice under mountains, coral in flooded pools) always apply. Example: --cave-biomes lush=150,deepdark=0,amethyst=60
+
+      --cave-zone-map <PREFIX>
+          Render the cave biome layout for --bbox and exit without generating a world: writes `<PREFIX>-upper.png` (upper caves) and `<PREFIX>-deep.png` (deep caves), transparent where the cave is plain rock, and prints a `ZONEMAP {json}` line with each theme's share. Honours --scale and --cave-biomes, so it matches what --caves will carve
+
+      --cave-zone-map-step <BLOCKS>
+          Blocks per output pixel for --cave-zone-map (1-512). Omitted picks a fine step that keeps the image within 1536 pixels
+
+      --legacy-trees
+          Use the legacy procedural trees instead of the bundled schematic tree pack. Schematic trees are on by default; this flag opts out
+
+      --max-tree-size <MAX_TREE_SIZE>
+          Largest schematic tree to place: small (<=6 blocks), medium (<=12), big (<=20), tall (<=28) or giant. Oversized picks fall back to a smaller species in the same community where there is one
+          
+          [default: giant]
+          [possible values: small, medium, big, tall, giant]
+
+      --canopy-height [<CANOPY_HEIGHT>]
+          Place trees from the Meta/WRI global canopy height map instead of assuming every tree-cover cell is forest. Land cover still decides the surface
+          
+          [default: true]
+          [possible values: true, false]
+
+      --overture [<OVERTURE>]
+          Add building footprints from Overture Maps that are missing in OpenStreetMap. Helps sparsely mapped areas; may occasionally add a satellite-detected false positive
+          
+          [default: true]
+          [possible values: true, false]
+
+      --overture-source <OVERTURE_SOURCE>
+          Which Overture transport to read. Both carry the same buildings. auto: vector tiles, falling back to the Parquet partitions (default) tiles: vector tiles only, so a fallback cannot hide a broken archive parquet: the GeoParquet partitions only
+
+          Possible values:
+          - auto:    Tiles where they are cheaper and available, Parquet otherwise
+          - tiles:   Vector tiles only. Fails rather than falling back, so a broken archive is visible instead of merely slow
+          - parquet: GeoParquet partitions only
+          
+          [default: auto]
+
+      --no-3d
+          Disable both external 3D models (3DMR + Wikimedia) and bundled schematic props (cars, boats, cranes, ...) with a single toggle
+
+      --debug
+          Enable debug mode (optional)
+
+      --timeout <TIMEOUT>
+          Set floodfill timeout (seconds) (optional)
+
+      --osm-tiles-url <OSM_TILES_URL>
+          Base URL of the Arnis OSM tile archive, read instead of Overpass
+          
+          [default: https://tiles.arnisproject.com/v1]
+
+      --no-tile-archive
+          Query Overpass directly and skip the tile archive
+
+      --spawn-lat <SPAWN_LAT>
+          Spawn point latitude (optional, must be within bbox)
+
+      --spawn-lng <SPAWN_LNG>
+          Spawn point longitude (optional, must be within bbox)
+
+      --rotation <ROTATION>
+          Clockwise rotation angle in degrees (optional, range: -90 to 90)
+          
+          [default: 0]
+
+      --disable-height-limit
+          Extend build height via a bundled pack (Java 1.21.4+: Y=-2032..2031; Bedrock 1.21.40+: Y=-512..512). Both are experimental
+
+      --aws-only-elevation
+          Use only the legacy AWS Terrain Tiles source (~30m) instead of Mapterhorn
+
+      --bake-lighting
+          Bake per-chunk lighting so distant chunks render lit in LOD mods (Voxy/Chunky) without visiting them. Slower; off by default
+
+      --voxy-lod
+          Pre-generate the Voxy mod's LOD cache so the world renders to the horizon on first join, instead of needing `/voxy import current`. Java only; implies --bake-lighting, since unlit LOD terrain renders black
+
+      --map-preview
+          Render a top-down PNG map preview of the generated world (Java and Bedrock)
+
+      --map-item [<MAP_ITEM>]
+          Give the player a locked map item showing the whole world (Java only)
+          
+          [default: true]
+          [possible values: true, false]
+
+      --gamemode <GAMEMODE>
+          Player game mode for the generated world
+          
+          [default: creative]
+          [possible values: survival, creative, spectator]
+
+      --world-time <WORLD_TIME>
+          Initial time of day in ticks (0 = dawn, 6000 = noon, 18000 = midnight)
+          
+          [default: 6000]
+
+      --world-type <WORLD_TYPE>
+          Java only: what the game generates around the area, empty void or a flat grass plain
+
+          Possible values:
+          - void: Nothing: the area is an island in the void
+          - flat: A superflat grass plain at the area's ground level
+          
+          [default: void]
+
+      --signage <SIGNAGE>
+          Readable image signs, Java only. `basic` covers public signage: street names, traffic signs, transit stops, information boards and billboards. `full` adds building signage: shop name plates, house numbers and crossing signs
+          
+          [default: basic]
+          [possible values: none, basic, full]
+
+      --mapillary-token <MAPILLARY_TOKEN>
+          Mapillary API token, from https://www.mapillary.com/developer. Required by --mapillary-facades and --mapillary-probe.
+          
+          `hide_env_values` because clap prints `[env: NAME=value]` in `--help` by default, and this value is a credential: `arnis --help` with the variable set would put the token on stdout, which is where a bug report or a CI log picks it up. The variable's name still shows, so the help still says where the token can come from.
+          
+          [env: MAPILLARY_TOKEN]
+
+      --mapillary-facades [<MAPILLARY_FACADES>]
+          Build building facades from Mapillary street-level photographs: wall colours per floor band everywhere, and windows and doors from the photographs from two blocks per metre up. Explicit OSM material and colour tags still win. On by default once a token is available, so the token alone is enough; pass `--mapillary-facades false` to keep the token and skip the work. Imagery and finished walls are cached, so a second world over the same area is quick
+          
+          [possible values: true, false]
+
+      --mapillary-probe
+          Run the Mapillary facade sampler, print what it found and exit without generating a world. Use this to check coverage for an area
+
+      --mapillary-debug-dir <MAPILLARY_DEBUG_DIR>
+          With --mapillary-probe, write one PNG per sampled building showing the reconstructed facade grids. Implies the sampler keeps its per-wall grids
+
+      --mapillary-facades-dir <MAPILLARY_FACADES_DIR>
+          Directory written by orthofacade's export_arnis.py: facade textures keyed by OSM way. Buildings found in it are built as plain walls carrying the texture; every other building is generated as usual. Overrides the fetch, which is how the Python review loop is driven; without it the pipeline runs for the world's own bbox and uses its own export
+
+      --mapillary-facade-debug-dir <MAPILLARY_FACADE_DEBUG_DIR>
+          Dump what each wall was built from (the loose crops, the per-view textures, the fused texture, the block grid and the gate table) into this directory, so a wall can be inspected instead of guessed at
+
+      --mapillary-facade-debug-walls <MAPILLARY_FACADE_DEBUG_WALLS>
+          With --mapillary-facade-debug-dir: the wall keys to dump, comma separated (for example w81190155_3). Empty dumps every wall that gets a texture, which is hundreds of megabytes on a city
+          
+          [default: ""]
+
+      --mapillary-facade-mode <MAPILLARY_FACADE_MODE>
+          How facade textures are applied: `photos` builds colour-matched blocks and hangs the photograph itself as one item display entity per wall face on the wall's true line, so a diagonal wall gets one flat quad rather than a staircase of axis-aligned panels (Java 1.21.4+ only, carried by the world's resource pack); `blocks` picks the palette block nearest each cell's colour and places windows and doors from the classes, and works on every world format
+
+          Possible values:
+          - blocks: Colour-matched wall blocks, with windows and doors from the texture
+          - photos: Blocks plus the photograph itself, one item display entity per wall face hung on the wall's true line rather than on the block grid. Java 1.21.4+ only
+          
+          [default: photos]
+
+      --building-facades
+          Hang a premade facade photograph on every building, picked by what kind of building it is. Needs no token and no download, so it covers the buildings street photography never reached. The two facade sources are alternatives: this one turns the Mapillary facades off, since both hang panels on the same walls. Java 1.21.4+ only (item display entities)
+
+      --facade-detail <FACADE_DETAIL>
+          How sharp the facade panels may be, by how large an atlas they may fill. `standard` fits any GPU the game runs on; `high` is sharper and wants a modern one on whatever machine opens the world
+          
+          [default: standard]
+          [possible values: standard, high]
+
+      --facade-px <FACADE_PX>
+          Texture resolution of the facade panels in pixels per block (4, 8, 16 or 32), for the Mapillary photos and the preset facades alike. Lowered automatically when the panels would not fit the atlas --facade-detail allows
+          
+          [default: 16]
+
+      --building-facades-dir <BUILDING_FACADES_DIR>
+          Directory holding the preset facade set: a manifest.json and the images it names. The set is compiled in, so this only has to be given to run a replacement one
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version

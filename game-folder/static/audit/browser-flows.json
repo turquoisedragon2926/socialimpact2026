@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "checks": [
+    "email \u2192 city region + year + climate \u2192 real scene",
+    "create named baseline alternative \u2192 plant \u2192 real playback \u2192 green after 13 samples",
+    "clearing \u2192 immediate purple before carbon loss",
+    "all seven brushes save correct cover; reset clears actions",
+    "multi-select \u2192 compare same year \u2192 correct map colors and numeric differences \u2192 exact JSON export",
+    "comparison opens matching year/layer; reset \u2192 reload \u2192 undo restores scenario",
+    "server restart preserves actions and results",
+    "mobile alternative cards, comparison controls and table remain usable",
+    "original remains unchanged; email re-entry restores all four scenes"
+  ],
+  "javascript_errors": []
+}

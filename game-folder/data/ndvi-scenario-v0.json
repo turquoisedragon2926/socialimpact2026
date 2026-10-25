@@ -1,0 +1,73 @@
+{
+  "model_version": "ndvi-scenario-linear-v0",
+  "status": "Implemented prototype scenario assumptions; not validated vegetation growth forecasts",
+  "region": "San Francisco pilot; transfer to other locations requires review",
+  "time_unit": "simulated year",
+  "baseline_policy": "Preserve observed NDVI. Missing baseline NDVI stays unknown.",
+  "target_rule": "clip(N0 + sum(beta[k] * (target_fraction[k] - baseline_fraction[k])), -1, 1)",
+  "trajectory_rule": "N(t) = N_at_edit + (target - N_at_edit) * min(1, max(0, (t - edit_year) / response_years))",
+  "zero_duration_rule": "Apply target immediately at edit_year when response_years == 0.",
+  "repeat_edit_rule": "Use the final cover in each simulated year. Start from attained NDVI; recompute target against the immutable original baseline. Same-cover repaint is a no-op.",
+  "category_parameters": {
+    "trees": {
+      "label": "Forest",
+      "beta": 0.67,
+      "response_years": 10,
+      "beta_basis": "Rounded SF fractional-cover regression coefficient; not a measured mature-forest endpoint"
+    },
+    "grass": {
+      "label": "Grassland",
+      "beta": 0.64,
+      "response_years": 2,
+      "beta_basis": "Rounded SF fractional-cover regression coefficient; only 47 cells >=70% grass in full study"
+    },
+    "crops": {
+      "label": "Cropland",
+      "beta": 0.55,
+      "response_years": 1,
+      "beta_basis": "Uncalibrated placeholder; no adequately pure SF cropland cells in study"
+    },
+    "wetland": {
+      "label": "Wetland",
+      "beta": 0.65,
+      "response_years": 3,
+      "beta_basis": "Uncalibrated placeholder for vegetated wetland; no adequately pure SF wetland cells in study"
+    },
+    "built": {
+      "label": "Artificial area",
+      "beta": 0.1,
+      "response_years": 0,
+      "beta_basis": "Rounded SF fractional-cover regression coefficient"
+    },
+    "bare": {
+      "label": "Bare land",
+      "beta": 0.1,
+      "response_years": 0,
+      "beta_basis": "Uncalibrated placeholder; only 6 cells >=70% bare in full SF study"
+    },
+    "water": {
+      "label": "Water",
+      "beta": -0.1,
+      "response_years": 0,
+      "beta_basis": "Uncalibrated placeholder; water-dominated cells excluded from fitting"
+    }
+  },
+  "response_time_basis": "ALL durations are chosen prototype assumptions. None were estimated by the NDVI experiment. Zero means the scenario action immediately replaces the surface, not that construction takes zero time.",
+  "not_modeled": [
+    "seasonality",
+    "weather",
+    "irrigation",
+    "species",
+    "harvest",
+    "clearing followed by planting",
+    "uncertainty dynamics",
+    "land-conversion feasibility"
+  ],
+  "degradation_policy": "Do not reuse SOC percentage thresholds for NDVI or present this as the full Trends.Earth productivity assessment.",
+  "coefficient_provenance": {
+    "experiment": "SF 10.15 km study square centered at 37.76, -122.45; 145 m cells; 2020 fractional-cover regression, 2021 spatial holdout",
+    "sf_fraction_model_MAE": 0.03581294224710489,
+    "sf_previous_ndvi_MAE": 0.00884154997766018,
+    "warning": "Observational associations, not causal intervention effects; no fitted response durations. Only forest, grassland and artificial coefficients are taken from the fit."
+  }
+}

@@ -1,0 +1,8 @@
+apps/
+downloads/*.zip
+downloads/*.tar.gz
+games/
+runtime/
+worlds/
+logs/
+data/arnis-cache/

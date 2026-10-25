@@ -1,0 +1,444 @@
+{
+  "checked_at_utc": "2026-10-25T02:32:00.519428+00:00",
+  "bbox": [
+    -122.49,
+    37.765,
+    -122.48,
+    37.775
+  ],
+  "scope": "Small SF rectangle, not the complete park. Raster access and catalog presence only; no accuracy or annual NDVI validation.",
+  "esri_land_cover": [
+    {
+      "year": 2017,
+      "url": "https://lulctimeseries.blob.core.windows.net/lulctimeseriesv003/lc2017/10S_20170101-20180101.tif",
+      "sample": {
+        "shape": [
+          111,
+          89
+        ],
+        "crs": "EPSG:32610",
+        "pixel_size": [
+          10.0,
+          10.0
+        ],
+        "nodata": 0.0,
+        "scale": 1.0,
+        "offset": 0.0,
+        "valid_pixels": 9879,
+        "min": 1.0,
+        "max": 11.0,
+        "class_counts": {
+          "1": 28,
+          "2": 5217,
+          "7": 4329,
+          "11": 305
+        }
+      }
+    },
+    {
+      "year": 2018,
+      "url": "https://lulctimeseries.blob.core.windows.net/lulctimeseriesv003/lc2018/10S_20180101-20190101.tif",
+      "sample": {
+        "shape": [
+          111,
+          89
+        ],
+        "crs": "EPSG:32610",
+        "pixel_size": [
+          10.0,
+          10.0
+        ],
+        "nodata": 0.0,
+        "scale": 1.0,
+        "offset": 0.0,
+        "valid_pixels": 9879,
+        "min": 1.0,
+        "max": 11.0,
+        "class_counts": {
+          "1": 42,
+          "2": 5700,
+          "7": 3782,
+          "11": 355
+        }
+      }
+    },
+    {
+      "year": 2019,
+      "url": "https://lulctimeseries.blob.core.windows.net/lulctimeseriesv003/lc2019/10S_20190101-20200101.tif",
+      "sample": {
+        "shape": [
+          111,
+          89
+        ],
+        "crs": "EPSG:32610",
+        "pixel_size": [
+          10.0,
+          10.0
+        ],
+        "nodata": 0.0,
+        "scale": 1.0,
+        "offset": 0.0,
+        "valid_pixels": 9879,
+        "min": 1.0,
+        "max": 11.0,
+        "class_counts": {
+          "1": 43,
+          "2": 5714,
+          "7": 3982,
+          "11": 140
+        }
+      }
+    },
+    {
+      "year": 2020,
+      "url": "https://lulctimeseries.blob.core.windows.net/lulctimeseriesv003/lc2020/10S_20200101-20210101.tif",
+      "sample": {
+        "shape": [
+          111,
+          89
+        ],
+        "crs": "EPSG:32610",
+        "pixel_size": [
+          10.0,
+          10.0
+        ],
+        "nodata": 0.0,
+        "scale": 1.0,
+        "offset": 0.0,
+        "valid_pixels": 9879,
+        "min": 1.0,
+        "max": 11.0,
+        "class_counts": {
+          "1": 44,
+          "2": 5351,
+          "7": 4023,
+          "11": 461
+        }
+      }
+    },
+    {
+      "year": 2021,
+      "url": "https://lulctimeseries.blob.core.windows.net/lulctimeseriesv003/lc2021/10S_20210101-20220101.tif",
+      "sample": {
+        "shape": [
+          111,
+          89
+        ],
+        "crs": "EPSG:32610",
+        "pixel_size": [
+          10.0,
+          10.0
+        ],
+        "nodata": 0.0,
+        "scale": 1.0,
+        "offset": 0.0,
+        "valid_pixels": 9879,
+        "min": 1.0,
+        "max": 11.0,
+        "class_counts": {
+          "1": 43,
+          "2": 5530,
+          "7": 3825,
+          "11": 481
+        }
+      }
+    },
+    {
+      "year": 2022,
+      "url": "https://lulctimeseries.blob.core.windows.net/lulctimeseriesv003/lc2022/10S_20220101-20230101.tif",
+      "sample": {
+        "shape": [
+          111,
+          89
+        ],
+        "crs": "EPSG:32610",
+        "pixel_size": [
+          10.0,
+          10.0
+        ],
+        "nodata": 0.0,
+        "scale": 1.0,
+        "offset": 0.0,
+        "valid_pixels": 9879,
+        "min": 1.0,
+        "max": 11.0,
+        "class_counts": {
+          "1": 30,
+          "2": 5511,
+          "7": 3841,
+          "11": 497
+        }
+      }
+    },
+    {
+      "year": 2023,
+      "url": "https://lulctimeseries.blob.core.windows.net/lulctimeseriesv003/lc2023/10S_20230101-20240101.tif",
+      "sample": {
+        "shape": [
+          111,
+          89
+        ],
+        "crs": "EPSG:32610",
+        "pixel_size": [
+          10.0,
+          10.0
+        ],
+        "nodata": 0.0,
+        "scale": 1.0,
+        "offset": 0.0,
+        "valid_pixels": 9879,
+        "min": 1.0,
+        "max": 11.0,
+        "class_counts": {
+          "1": 16,
+          "2": 4581,
+          "7": 4848,
+          "11": 434
+        }
+      }
+    },
+    {
+      "year": 2024,
+      "url": "https://lulctimeseries.blob.core.windows.net/lulctimeseriesv003/lc2024/10S_20240101-20241231.tif",
+      "sample": {
+        "shape": [
+          111,
+          89
+        ],
+        "crs": "EPSG:32610",
+        "pixel_size": [
+          10.0,
+          10.0
+        ],
+        "nodata": 0.0,
+        "scale": 1.0,
+        "offset": 0.0,
+        "valid_pixels": 9879,
+        "min": 1.0,
+        "max": 11.0,
+        "class_counts": {
+          "1": 15,
+          "2": 4656,
+          "7": 4773,
+          "11": 435
+        }
+      }
+    },
+    {
+      "year": 2025,
+      "url": "https://lulctimeseries.blob.core.windows.net/lulctimeseriesv003/lc2025/10S_20250101-20251231.tif",
+      "sample": {
+        "shape": [
+          111,
+          89
+        ],
+        "crs": "EPSG:32610",
+        "pixel_size": [
+          10.0,
+          10.0
+        ],
+        "nodata": 0.0,
+        "scale": 1.0,
+        "offset": 0.0,
+        "valid_pixels": 9879,
+        "min": 1.0,
+        "max": 11.0,
+        "class_counts": {
+          "1": 21,
+          "2": 4559,
+          "7": 4763,
+          "11": 536
+        }
+      }
+    }
+  ],
+  "sentinel_catalog": [
+    {
+      "year": 2017,
+      "found": true,
+      "item": "S2A_MSIL2A_20171226T190341_R113_T10SEG_20201014T162850",
+      "datetime": "2017-12-26T19:03:41.026000Z",
+      "scene_cloud_percent": 19.891816,
+      "processing_baseline": "02.12",
+      "assets": {
+        "B04": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2017/12/26/S2A_MSIL2A_20171226T190341_N0212_R113_T10SEG_20201014T162850.SAFE/GRANULE/L2A_T10SEG_A013123_20171226T190343/IMG_DATA/R10m/T10SEG_20171226T190341_B04_10m.tif",
+        "B08": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2017/12/26/S2A_MSIL2A_20171226T190341_N0212_R113_T10SEG_20201014T162850.SAFE/GRANULE/L2A_T10SEG_A013123_20171226T190343/IMG_DATA/R10m/T10SEG_20171226T190341_B08_10m.tif",
+        "SCL": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2017/12/26/S2A_MSIL2A_20171226T190341_N0212_R113_T10SEG_20201014T162850.SAFE/GRANULE/L2A_T10SEG_A013123_20171226T190343/IMG_DATA/R20m/T10SEG_20171226T190341_SCL_20m.tif"
+      }
+    },
+    {
+      "year": 2018,
+      "found": true,
+      "item": "S2A_MSIL2A_20181231T185801_R113_T10SEG_20201008T143110",
+      "datetime": "2018-12-31T18:58:01.024000Z",
+      "scene_cloud_percent": 0.647314,
+      "processing_baseline": "02.12",
+      "assets": {
+        "B04": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2018/12/31/S2A_MSIL2A_20181231T185801_N0212_R113_T10SEG_20201008T143110.SAFE/GRANULE/L2A_T10SEG_A018414_20181231T190045/IMG_DATA/R10m/T10SEG_20181231T185801_B04_10m.tif",
+        "B08": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2018/12/31/S2A_MSIL2A_20181231T185801_N0212_R113_T10SEG_20201008T143110.SAFE/GRANULE/L2A_T10SEG_A018414_20181231T190045/IMG_DATA/R10m/T10SEG_20181231T185801_B08_10m.tif",
+        "SCL": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2018/12/31/S2A_MSIL2A_20181231T185801_N0212_R113_T10SEG_20201008T143110.SAFE/GRANULE/L2A_T10SEG_A018414_20181231T190045/IMG_DATA/R20m/T10SEG_20181231T185801_SCL_20m.tif"
+      }
+    },
+    {
+      "year": 2019,
+      "found": true,
+      "item": "S2A_MSIL2A_20191226T185801_R113_T10SEG_20201003T094829",
+      "datetime": "2019-12-26T18:58:01.024000Z",
+      "scene_cloud_percent": 1.328048,
+      "processing_baseline": "02.12",
+      "assets": {
+        "B04": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2019/12/26/S2A_MSIL2A_20191226T185801_N0212_R113_T10SEG_20201003T094829.SAFE/GRANULE/L2A_T10SEG_A023562_20191226T190010/IMG_DATA/R10m/T10SEG_20191226T185801_B04_10m.tif",
+        "B08": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2019/12/26/S2A_MSIL2A_20191226T185801_N0212_R113_T10SEG_20201003T094829.SAFE/GRANULE/L2A_T10SEG_A023562_20191226T190010/IMG_DATA/R10m/T10SEG_20191226T185801_B08_10m.tif",
+        "SCL": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2019/12/26/S2A_MSIL2A_20191226T185801_N0212_R113_T10SEG_20201003T094829.SAFE/GRANULE/L2A_T10SEG_A023562_20191226T190010/IMG_DATA/R20m/T10SEG_20191226T185801_SCL_20m.tif"
+      }
+    },
+    {
+      "year": 2020,
+      "found": true,
+      "item": "S2A_MSIL2A_20201220T185811_R113_T10SEG_20201221T052802",
+      "datetime": "2020-12-20T18:58:11.024000Z",
+      "scene_cloud_percent": 0.692403,
+      "processing_baseline": "02.12",
+      "assets": {
+        "B04": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2020/12/20/S2A_MSIL2A_20201220T185811_N0212_R113_T10SEG_20201221T052802.SAFE/GRANULE/L2A_T10SEG_A028710_20201220T190036/IMG_DATA/R10m/T10SEG_20201220T185811_B04_10m.tif",
+        "B08": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2020/12/20/S2A_MSIL2A_20201220T185811_N0212_R113_T10SEG_20201221T052802.SAFE/GRANULE/L2A_T10SEG_A028710_20201220T190036/IMG_DATA/R10m/T10SEG_20201220T185811_B08_10m.tif",
+        "SCL": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2020/12/20/S2A_MSIL2A_20201220T185811_N0212_R113_T10SEG_20201221T052802.SAFE/GRANULE/L2A_T10SEG_A028710_20201220T190036/IMG_DATA/R20m/T10SEG_20201220T185811_SCL_20m.tif"
+      }
+    },
+    {
+      "year": 2021,
+      "found": true,
+      "item": "S2B_MSIL2A_20211230T185759_R113_T10SEG_20211231T202902",
+      "datetime": "2021-12-30T18:57:59.024000Z",
+      "scene_cloud_percent": 4.961397,
+      "processing_baseline": "03.00",
+      "assets": {
+        "B04": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2021/12/30/S2B_MSIL2A_20211230T185759_N0300_R113_T10SEG_20211231T202902.SAFE/GRANULE/L2A_T10SEG_A025164_20211230T185801/IMG_DATA/R10m/T10SEG_20211230T185759_B04_10m.tif",
+        "B08": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2021/12/30/S2B_MSIL2A_20211230T185759_N0300_R113_T10SEG_20211231T202902.SAFE/GRANULE/L2A_T10SEG_A025164_20211230T185801/IMG_DATA/R10m/T10SEG_20211230T185759_B08_10m.tif",
+        "SCL": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2021/12/30/S2B_MSIL2A_20211230T185759_N0300_R113_T10SEG_20211231T202902.SAFE/GRANULE/L2A_T10SEG_A025164_20211230T185801/IMG_DATA/R20m/T10SEG_20211230T185759_SCL_20m.tif"
+      }
+    },
+    {
+      "year": 2022,
+      "found": true,
+      "item": "S2B_MSIL2A_20221215T185809_R113_T10SEG_20221216T081157",
+      "datetime": "2022-12-15T18:58:09.024000Z",
+      "scene_cloud_percent": 19.677109,
+      "processing_baseline": "04.00",
+      "assets": {
+        "B04": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2022/12/15/S2B_MSIL2A_20221215T185809_N0400_R113_T10SEG_20221216T081157.SAFE/GRANULE/L2A_T10SEG_A030169_20221215T190249/IMG_DATA/R10m/T10SEG_20221215T185809_B04_10m.tif",
+        "B08": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2022/12/15/S2B_MSIL2A_20221215T185809_N0400_R113_T10SEG_20221216T081157.SAFE/GRANULE/L2A_T10SEG_A030169_20221215T190249/IMG_DATA/R10m/T10SEG_20221215T185809_B08_10m.tif",
+        "SCL": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2022/12/15/S2B_MSIL2A_20221215T185809_N0400_R113_T10SEG_20221216T081157.SAFE/GRANULE/L2A_T10SEG_A030169_20221215T190249/IMG_DATA/R20m/T10SEG_20221215T185809_SCL_20m.tif"
+      }
+    },
+    {
+      "year": 2023,
+      "found": true,
+      "item": "S2B_MSIL2A_20231130T185739_R113_T10SEG_20241031T042024",
+      "datetime": "2023-11-30T18:57:39.024000Z",
+      "scene_cloud_percent": 8.262773,
+      "processing_baseline": "05.10",
+      "assets": {
+        "B04": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2023/11/30/S2B_MSIL2A_20231130T185739_N0510_R113_T10SEG_20241031T042024.SAFE/GRANULE/L2A_T10SEG_A035174_20231130T185733/IMG_DATA/R10m/T10SEG_20231130T185739_B04_10m.tif",
+        "B08": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2023/11/30/S2B_MSIL2A_20231130T185739_N0510_R113_T10SEG_20241031T042024.SAFE/GRANULE/L2A_T10SEG_A035174_20231130T185733/IMG_DATA/R10m/T10SEG_20231130T185739_B08_10m.tif",
+        "SCL": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2023/11/30/S2B_MSIL2A_20231130T185739_N0510_R113_T10SEG_20241031T042024.SAFE/GRANULE/L2A_T10SEG_A035174_20231130T185733/IMG_DATA/R20m/T10SEG_20231130T185739_SCL_20m.tif"
+      }
+    },
+    {
+      "year": 2024,
+      "found": true,
+      "item": "S2A_MSIL2A_20241219T185811_R113_T10SEG_20241219T221845",
+      "datetime": "2024-12-19T18:58:11.024000Z",
+      "scene_cloud_percent": 5.187955,
+      "processing_baseline": "05.11",
+      "assets": {
+        "B04": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2024/12/19/S2A_MSIL2A_20241219T185811_N0511_R113_T10SEG_20241219T221845.SAFE/GRANULE/L2A_T10SEG_A049588_20241219T185808/IMG_DATA/R10m/T10SEG_20241219T185811_B04_10m.tif",
+        "B08": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2024/12/19/S2A_MSIL2A_20241219T185811_N0511_R113_T10SEG_20241219T221845.SAFE/GRANULE/L2A_T10SEG_A049588_20241219T185808/IMG_DATA/R10m/T10SEG_20241219T185811_B08_10m.tif",
+        "SCL": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2024/12/19/S2A_MSIL2A_20241219T185811_N0511_R113_T10SEG_20241219T221845.SAFE/GRANULE/L2A_T10SEG_A049588_20241219T185808/IMG_DATA/R20m/T10SEG_20241219T185811_SCL_20m.tif"
+      }
+    },
+    {
+      "year": 2025,
+      "found": true,
+      "item": "S2B_MSIL2A_20251229T185709_R113_T10SEG_20251229T224200",
+      "datetime": "2025-12-29T18:57:09.024000Z",
+      "scene_cloud_percent": 0.004356,
+      "processing_baseline": "05.11",
+      "assets": {
+        "B04": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2025/12/29/S2B_MSIL2A_20251229T185709_N0511_R113_T10SEG_20251229T224200.SAFE/GRANULE/L2A_T10SEG_A046042_20251229T190039/IMG_DATA/R10m/T10SEG_20251229T185709_B04_10m.tif",
+        "B08": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2025/12/29/S2B_MSIL2A_20251229T185709_N0511_R113_T10SEG_20251229T224200.SAFE/GRANULE/L2A_T10SEG_A046042_20251229T190039/IMG_DATA/R10m/T10SEG_20251229T185709_B08_10m.tif",
+        "SCL": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/10/S/EG/2025/12/29/S2B_MSIL2A_20251229T185709_N0511_R113_T10SEG_20251229T224200.SAFE/GRANULE/L2A_T10SEG_A046042_20251229T190039/IMG_DATA/R20m/T10SEG_20251229T185709_SCL_20m.tif"
+      },
+      "samples": {
+        "B04": {
+          "shape": [
+            111,
+            89
+          ],
+          "crs": "EPSG:32610",
+          "pixel_size": [
+            10.0,
+            10.0
+          ],
+          "nodata": 0.0,
+          "scale": 1.0,
+          "offset": 0.0,
+          "valid_pixels": 9879,
+          "min": 948.0,
+          "max": 6932.0,
+          "class_counts": null
+        },
+        "B08": {
+          "shape": [
+            111,
+            89
+          ],
+          "crs": "EPSG:32610",
+          "pixel_size": [
+            10.0,
+            10.0
+          ],
+          "nodata": 0.0,
+          "scale": 1.0,
+          "offset": 0.0,
+          "valid_pixels": 9879,
+          "min": 1096.0,
+          "max": 7620.0,
+          "class_counts": null
+        },
+        "SCL": {
+          "shape": [
+            56,
+            44
+          ],
+          "crs": "EPSG:32610",
+          "pixel_size": [
+            20.0,
+            20.0
+          ],
+          "nodata": 0.0,
+          "scale": 1.0,
+          "offset": 0.0,
+          "valid_pixels": 2464,
+          "min": 4.0,
+          "max": 6.0,
+          "class_counts": {
+            "4": 1550,
+            "5": 897,
+            "6": 17
+          }
+        }
+      }
+    }
+  ],
+  "planetary_computer_land_cover_items": [
+    "10S-2023",
+    "10S-2022",
+    "10S-2021",
+    "10S-2020",
+    "10S-2019",
+    "10S-2018",
+    "10S-2017"
+  ],
+  "mirror_has_more_pages": false
+}

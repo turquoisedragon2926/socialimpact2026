@@ -1,0 +1,43 @@
+Allowed options:
+  --address <value>           Address to connect to ('' = local game)
+  --color <value>             Coloured logs ('always', 'never' or 'auto'), default: 'auto'
+  --config <value>            Load configuration from specified file
+  --console                   Start with the console open (Windows only)
+  --debugger                  Try to automatically attach a debugger before starting (convenience option)
+  --gameid <value>            Set gameid ("--gameid list" prints available ones)
+  --go                        Skip main menu, go directly in-game
+  --help                      Show allowed options
+  --info                      Print more information to console
+  --log-timestamp <value>     Timestamped logs ('wall', 'relative' or 'none'), default: 'wall'
+  --logfile <value>           Set log file path ('' = no logging)
+  --map-dir <value>           Same as --world (deprecated)
+  --migrate <value>           Migrate from current map backend to another (requires --server flag)
+  --migrate-auth <value>      Migrate from current auth backend to another (requires --server flag)
+  --migrate-mod-storage <value>
+                              Migrate from current mod storage backend to another (requires --server flag)
+  --migrate-players <value>   Migrate from current players backend to another (requires --server flag)
+  --name <value>              Set player name
+  --password <value>          Set password
+  --password-file <value>     Set password from contents of file
+  --port <value>              Set network port (UDP)
+  --quiet                     Print only errors to console
+  --random-input              Enable random user input (for testing)
+  --recompress                Recompress the blocks of the given map database (requires --server flag)
+  --run-benchmarks            Run Catch2 benchmarks and exit; all following args are passed to Catch2
+  --run-tests                 Run Catch2 unit tests and exit; all following args are passed to Catch2
+  --run-unittests             Run legacy unit tests and Catch2 tests and exit
+  --server                    Behave as dedicated server
+  --terminal                  Enable ncurses interactive terminal (requires --server flag)
+  --test-module <value>       Only run the specified test module or benchmark
+  --trace                     Print enormous amounts of information to log and console
+  --verbose                   Print even more information to console
+  --version                   Show version information
+  --world <value>             Set world path (implies local game if used with option --go)
+  --worldlist <value>         Get list of worlds ('path' lists paths, 'name' lists names, 'both' lists both)
+  --worldname <value>         Set world by name (implies local game if used with option --go)
+
+Supported database backends:
+  map             : dummy, sqlite3
+  players         : dummy, files, sqlite3
+  auth            : dummy, files, sqlite3
+  mod storage     : dummy, files, sqlite3

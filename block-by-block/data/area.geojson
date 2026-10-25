@@ -1,0 +1,40 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Dolores Park demo",
+        "crs": "WGS84",
+        "bbox_order": "west,south,east,north"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -122.4295,
+              37.758
+            ],
+            [
+              -122.4245,
+              37.758
+            ],
+            [
+              -122.4245,
+              37.7625
+            ],
+            [
+              -122.4295,
+              37.7625
+            ],
+            [
+              -122.4295,
+              37.758
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "ok": true,
+  "verified_at": "2026-10-25T06:09:26.654665+00:00",
+  "unit_tests_passed": 146,
+  "annual_scenario_evaluations": 328,
+  "configuration_cases": 420,
+  "live_scenarios_verified": 8,
+  "checks": [
+    "Current model and data match recorded source hashes",
+    "All seven brushes, real region/year/climate configuration and 420 input combinations",
+    "Same-year comparison differences match all eight audited scenarios",
+    "Observed map changes, unknown areas and recovery stories have reproducible evidence",
+    "Browser creation, playback, export, persistence, mobile and reset/undo passed",
+    "Eight saved demo scenarios match their actions, year and measured outcomes",
+    "Live JavaScript, styles and report match local files"
+  ],
+  "sha256": {
+    "server.py": "7ab397e0f9aac5629d23ea88e72f39bb3a7be99434ab36d927a46f8215b6e3c4",
+    "static/app.js": "738d8bcf1e8ea0edf19abfb505bc2085a4c94bca4c72aa94d896c2f4dba8567c",
+    "static/style.css": "88a2792bde4eecdf03bcab5bc88dfc97282084d501a945edc43a589eb14b2242",
+    "static/audit/index.html": "2921a211397d9062185e8b10df85caf92a072a03dce4f3136627e721ca00eb9f",
+    "static/audit/evidence.json": "ce05ad3811ef9ff9e1665b1277e1f662c46a2597c31737549edeb3a8796ca60c",
+    "scripts/scenario_flow_check.py": "04739ebcc7743622c5df104352ea7e2a25d250e81c1c25314537ea01a40420f7",
+    "static/audit/browser-flows.json": "6193e45f08bf37a8f2229d8d295f49c508106be80d8035c81f674935395e6bb6",
+    "static/audit/unit-tests.txt": "1174578c77e0bf39ee4b8d95639193958cdb711b54d66e557fec2c0011bf182c"
+  },
+  "limitations": [
+    "Vegetation responses are prototype assumptions, not validated causal forecasts.",
+    "Productivity uses simulated reference years and cover-only comparison groups.",
+    "Missing soil coverage and open-water productivity remain explicit unknowns.",
+    "The annual scenario sweep covers 2021\u20132061; it does not validate arbitrary future years."
+  ]
+}

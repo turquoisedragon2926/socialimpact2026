@@ -1,0 +1,130 @@
+{
+  "captured_at": "2026-10-24T17:51:36.189674+00:00",
+  "generator": "Arnis 3.3.0",
+  "bbox_lat_lng": [
+    37.758,
+    -122.4295,
+    37.7625,
+    -122.4245
+  ],
+  "sources": [
+    "OpenStreetMap via https://tiles.arnisproject.com/v1",
+    "Overture Maps",
+    "Mapterhorn terrain",
+    "ESA WorldCover 2021",
+    "Meta/WRI canopy height"
+  ],
+  "notes": "Copies of local Arnis download caches after generation; not an OSM JSON export. See logs/generation.log for observed processing.",
+  "files": [
+    {
+      "path": "data/arnis-cache/arnis/osm-tiles/fa772821a48c40d8/archives.json",
+      "bytes": 40142,
+      "sha256": "8ba5204e264d290ee327a8dfb994ec99dc56d59f26da7836a75bc5b7aa82654d"
+    },
+    {
+      "path": "data/arnis-cache/arnis/osm-tiles/fa772821a48c40d8/north-america.pmtiles/header.bin",
+      "bytes": 127,
+      "sha256": "9c91673bbd7efb35aeffa6b5aeaf32e4e1b519e9cd1534ffb4cb31df63e875df"
+    },
+    {
+      "path": "data/arnis-cache/arnis/osm-tiles/fa772821a48c40d8/north-america.pmtiles/leaf/3621627_11533.bin",
+      "bytes": 11533,
+      "sha256": "345ed44bbd79f021ed4e961154297c7d98f213a69fed9c321936741cbcfa94aa"
+    },
+    {
+      "path": "data/arnis-cache/arnis/osm-tiles/fa772821a48c40d8/north-america.pmtiles/root.bin",
+      "bytes": 2496,
+      "sha256": "9c2335f852fcc686d138d775dab35760882e7d439b5bf0da093a309fb89581f4"
+    },
+    {
+      "path": "data/arnis-cache/arnis/osm-tiles/fa772821a48c40d8/north-america.pmtiles/t/13/1310/3166.bin",
+      "bytes": 1230016,
+      "sha256": "6e219ef1fc536e8020ab0c7ab32ffc7880c2b6d709c60cb6b7db76ab394348b5"
+    },
+    {
+      "path": "data/arnis-cache/arnis-canopy-cache/023010203.idx",
+      "bytes": 1048576,
+      "sha256": "1c5d521c770ce0607688226532cffafab92c4d9224fb757fa815011324287c0d"
+    },
+    {
+      "path": "data/arnis-cache/arnis-canopy-cache/rows/023010203/471.strips",
+      "bytes": 166687,
+      "sha256": "73d21d60510707853b146355b12c31c93e41e7596882be442999375287b0b10c"
+    },
+    {
+      "path": "data/arnis-cache/arnis-canopy-cache/rows/023010203/472.strips",
+      "bytes": 183856,
+      "sha256": "a9b1afd25282a39cf526f35b2c5ec5f6040aad1d5746f15c019e2c26a0c2e010"
+    },
+    {
+      "path": "data/arnis-cache/arnis-canopy-cache/rows/023010203/473.strips",
+      "bytes": 181981,
+      "sha256": "018f3e08cb4d917d550d41366b787d99b09fdc656ef50a54bb962a62019d30de"
+    },
+    {
+      "path": "data/arnis-cache/arnis-canopy-cache/rows/023010203/474.strips",
+      "bytes": 190979,
+      "sha256": "11789995cc48195dcf0141f48d083962ec9215342455fc6ebe7b5a8482330d36"
+    },
+    {
+      "path": "data/arnis-cache/arnis-canopy-cache/rows/023010203/475.strips",
+      "bytes": 195208,
+      "sha256": "f9c2589e9c020a4906771a913295dc0077e927e97f7ace9bc882b8004bfa00ec"
+    },
+    {
+      "path": "data/arnis-cache/arnis-landcover-cache/ESA_WorldCover_10m_2021_v200_N36W123_Map_header.bin",
+      "bytes": 65536,
+      "sha256": "edd56b9fb81aa13995a5b012c749be36b7e7db8a45cdfb003e5e89da841e3795"
+    },
+    {
+      "path": "data/arnis-cache/arnis-landcover-cache/ESA_WorldCover_10m_2021_v200_N36W123_Map_tile_6_14.bin",
+      "bytes": 64385,
+      "sha256": "d3f6f08abaf9843248b0878702bf94a6cca9dbe51e73929357f6b85967dcb568"
+    },
+    {
+      "path": "data/arnis-cache/arnis-overture-cache/2026-10-21.0/tiles/buildings/header.bin",
+      "bytes": 127,
+      "sha256": "7a5eeaac3c5ab082aad2fa0676ed369d7b2fe7b420ec0af9db175bbf15a090fc"
+    },
+    {
+      "path": "data/arnis-cache/arnis-overture-cache/2026-10-21.0/tiles/buildings/leaf/10303568_11068.bin",
+      "bytes": 11068,
+      "sha256": "764d3e908dd070b181db05244d0aaa3181060221a21831d615ff61ae644622b4"
+    },
+    {
+      "path": "data/arnis-cache/arnis-overture-cache/2026-10-21.0/tiles/buildings/root.bin",
+      "bytes": 14124,
+      "sha256": "8c883c1dbc208a7cedafce91986dd1b613d84d4c657078f4bdeaaea724b3679e"
+    },
+    {
+      "path": "data/arnis-cache/arnis-overture-cache/2026-10-21.0/tiles/buildings/t/14/2620/6333.bin",
+      "bytes": 521259,
+      "sha256": "fab0bdf05b14650eb6c62108cf54fd98ee715758b387307e1520197ba569a81e"
+    },
+    {
+      "path": "data/arnis-cache/arnis-overture-cache/last_good_release",
+      "bytes": 12,
+      "sha256": "b5761b5b9c2b13a47a6de2e51b5de67f76e129f7b517b5a75e4ff124617fcb23"
+    },
+    {
+      "path": "data/arnis-cache/arnis-tile-cache/mapterhorn/z16_x10480_y25333.webp",
+      "bytes": 69192,
+      "sha256": "a899ae43599928f09123d780e12d69d57c2fb1241a035ca7313dee45f469e338"
+    },
+    {
+      "path": "data/arnis-cache/arnis-tile-cache/mapterhorn/z16_x10480_y25334.webp",
+      "bytes": 97348,
+      "sha256": "2924696fe2e9596443d8ebba6bcfd38a8a3af63a4f87b9fdbeafd9f50c4132f3"
+    },
+    {
+      "path": "data/arnis-cache/arnis-tile-cache/mapterhorn/z16_x10481_y25333.webp",
+      "bytes": 66764,
+      "sha256": "6b26b0ee906aca2c813228d07370b3d59de683c31ab90c3a718521b17a0a939a"
+    },
+    {
+      "path": "data/arnis-cache/arnis-tile-cache/mapterhorn/z16_x10481_y25334.webp",
+      "bytes": 76720,
+      "sha256": "ff38377f9f71150fd03af9696b66b77aab28693c6a30baff7ae72ace788ca198"
+    }
+  ]
+}
