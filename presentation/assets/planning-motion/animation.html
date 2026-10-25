@@ -1,0 +1,84 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>SF planning motion · synthetic illustration</title><style>html,body{margin:0;background:#f7f8f3;width:100%;height:100%;overflow:hidden}canvas{width:100%;height:100%;object-fit:contain}</style></head><body><canvas width="1280" height="720"></canvas><script>
+const canvas=document.querySelector('canvas'),c=canvas.getContext('2d'),P='#f7f8f3',TAU=Math.PI*2;
+let cells=[],mode=new URLSearchParams(location.search).get('mode')||'sixmaps';
+const mix=(a,b,t)=>a.map((v,i)=>Math.round(v+(b[i]-v)*t));
+const paper=[247,248,243],green=[103,140,92],purple=[155,116,149],stable=[226,229,207];
+const clamp=v=>Math.max(0,Math.min(1,v));
+function line(points,alpha=.3,dash=[]){c.save();c.strokeStyle=`rgba(100,130,112,${alpha})`;c.lineWidth=1.25;c.setLineDash(dash);c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.stroke();c.restore()}
+function node(x,y,t,r=5){c.save();c.strokeStyle='#9eb29d';c.fillStyle=P;c.lineWidth=1.3;c.beginPath();c.arc(x,y,r,0,TAU);c.fill();c.stroke();c.globalAlpha=.22*(1-(t%1));c.beginPath();c.arc(x,y,r+14*(t%1),0,TAU);c.stroke();c.restore()}
+function packet(points,t){const segments=points.length-1,u=(t%1+1)%1*segments,i=Math.floor(u),f=u-i;const a=points[i],b=points[i+1];node(a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,t*3,3)}
+function bubble(x,y,w,t,agent=false){c.save();c.globalAlpha=.48;c.fillStyle='#eff2e9';c.strokeStyle='#b8c5b6';c.lineWidth=1;c.beginPath();c.roundRect(x,y,w,48,12);c.fill();c.stroke();c.strokeStyle='#9baf9b';for(let i=0;i<3;i++){c.globalAlpha=.19+.25*clamp((Math.sin(t*TAU-i)+1)/2);c.beginPath();c.moveTo(x+34,y+15+i*8);c.lineTo(x+Math.min(w-15,50+((i*37)%100)),y+15+i*8);c.stroke()}c.globalAlpha=.7;c.translate(x+18,y+23);if(agent){c.beginPath();c.moveTo(0,-7);c.quadraticCurveTo(1,-1,7,0);c.quadraticCurveTo(1,1,0,7);c.quadraticCurveTo(-1,1,-7,0);c.quadraticCurveTo(-1,-1,0,-7);c.stroke()}else{c.beginPath();c.moveTo(-4,-7);c.lineTo(-4,7);c.lineTo(0,3);c.lineTo(4,9);c.stroke()}c.restore()}
+function map(x,y,size,time,seed=0,alpha=.4){c.save();c.translate(x,y);c.scale(size/600,size/600);c.globalAlpha=alpha;for(const cell of cells){const xx=cell.x,yy=cell.y;const cluster=Math.sin(xx*12+seed*2.3)*Math.cos(yy*10-seed)+.5*Math.sin(yy*22+xx*8);const evolution=Math.sin(TAU*time/12-yy*2+seed*.9);const v=cluster*.48+evolution*.65;const base=v>0?green:purple;const amt=clamp((Math.abs(v)-.12)*1.6);const rgb=mix(stable,base,amt);c.fillStyle=`rgb(${rgb.join(',')})`;c.fill(cell.path)}c.globalAlpha=alpha*.25;c.strokeStyle='#b6c6b5';c.lineWidth=.45;for(const cell of cells)c.stroke(cell.path);c.restore()}
+function scan(x,y,size,time,seed){const phase=(time/12+seed*.17)%1;const yy=y+phase*size;c.save();c.strokeStyle='#93b1a0';c.globalAlpha=.15*Math.sin(phase*Math.PI);c.setLineDash([3,6]);c.beginPath();c.moveTo(x+size*.1,yy);c.lineTo(x+size*.9,yy);c.stroke();c.restore()}
+function curves(x,y,w,h,t){c.save();c.translate(x,y);c.globalAlpha=.32;line([[0,0],[0,h],[w,h]],.22);for(let k=0;k<3;k++){c.strokeStyle=['#91aa87','#ad91a7','#91a6b0'][k];c.lineWidth=1.3;c.beginPath();for(let i=0;i<=60;i++){const u=i/60,v=.7-.36*(1-Math.exp(-u*4))+(k-1)*.14*Math.sin(u*2.7+t*TAU/12);i?c.lineTo(u*w,v*h):c.moveTo(0,v*h)}c.stroke()}const pos=(t/12)%1;c.strokeStyle='#7f9985';c.setLineDash([2,5]);c.beginPath();c.moveTo(w*pos,0);c.lineTo(w*pos,h);c.stroke();c.restore()}
+function wash(){const g=c.createRadialGradient(600,320,90,600,320,500);g.addColorStop(0,'rgba(247,248,243,.98)');g.addColorStop(.5,'rgba(247,248,243,.92)');g.addColorStop(.8,'rgba(247,248,243,.15)');g.addColorStop(1,'rgba(247,248,243,0)');c.fillStyle=g;c.fillRect(0,0,1280,720)}
+// Synthetic, periodic fields: broad changing patches plus cell-level variation.
+// Shared driver links the six views visually; it is deliberately not a physical model.
+const deckGreen=[32,61,52];
+const fieldLabels=['Land cover','Vegetation · NDVI','Soil carbon','Productivity','Carbon change','Land degradation'];
+function fieldAt(x,y,time){
+ const phase=TAU*time/12;
+ const local=Math.sin(x*39+y*27)*Math.cos(y*31-x*13);
+ const front=Math.sin(x*11-y*8+phase*2)+.7*Math.cos(y*14+x*4-phase);
+ const change=Math.tanh(front*1.8);
+ const base=.5+.22*Math.sin(x*15+y*5)*Math.cos(y*11)+.12*local;
+ return {v:clamp(base+.38*change),change,local};
+}
+function fieldColor(kind,f){
+ const v=f.v;
+ if(kind===0){ // Discrete land-cover transitions remain clearly visible cell by cell.
+  return v<.23?[180,152,123]:v<.43?[169,157,162]:v<.62?[205,193,111]:v<.78?[151,177,104]:[85,135,102];
+ }
+ if(kind===1)return mix([196,149,127],[72,139,102],v);
+ if(kind===2)return mix([215,190,144],[115,124,88],v);
+ if(kind===3)return mix([174,132,163],[112,161,128],v);
+ if(kind===4)return mix([178,126,153],[103,156,144],clamp(.5+f.change*.48));
+ return f.change<-.25?[170,126,151]:f.change>.25?[108,154,114]:[220,207,153];
+}
+function sixMaps(t){
+ for(let k=0;k<6;k++){
+  const center=1280*(k%3+.5)/3,y=k<3?32:424,size=276;
+  c.save();c.fillStyle='#82998c';c.font='13px system-ui, sans-serif';c.textAlign='center';c.fillText(fieldLabels[k],center,y-12);
+  c.translate(center-size/2,y);c.scale(size/600,size/600);
+  for(const cell of cells){
+   const rgb=mix(deckGreen,fieldColor(k,fieldAt(cell.x,cell.y,t)),.32);
+   c.fillStyle=`rgb(${rgb.join(',')})`;c.fill(cell.path);
+  }
+  // Fine grid retains the changing-cell character when the maps are reduced.
+  c.strokeStyle='rgba(247,248,243,.035)';c.lineWidth=.65;
+  for(const cell of cells)c.stroke(cell.path);
+  c.restore();
+ }
+}
+function whiteWaves(t){
+ c.save();c.lineWidth=1.5;
+ for(let j=0;j<5;j++){
+  c.strokeStyle=`rgba(255,255,255,${.46-j*.055})`;c.beginPath();
+  for(let x=0;x<=290;x+=3){
+   const envelope=Math.pow(1-x/290,1.4);
+   const y=708-j*10-12*envelope*Math.sin(x/45-TAU*t/12+j*.35);
+   x?c.lineTo(x,y):c.moveTo(x,y);
+  }
+  c.stroke();
+ }
+ c.restore();
+}
+window.syntheticFieldAt=fieldAt;
+window.renderAt=(time,variant=mode)=>{const t=((time%12)+12)%12;c.clearRect(0,0,1280,720);c.fillStyle=P;c.fillRect(0,0,1280,720);
+if(variant==='sixmaps'){c.fillStyle='#203d34';c.fillRect(0,0,1280,720);sixMaps(t);whiteWaves(t);return;}
+if(variant==='branching'){
+ map(8,400,280,t,0,.34);bubble(40,330,190,t/12);bubble(300,610,190,t/12+.2,true);
+ const paths=[[[490,635],[710,635],[890,135],[1035,135]],[[490,635],[710,635],[890,365],[1035,365]],[[490,635],[710,635],[890,600],[1035,600]]];
+ paths.forEach((p,i)=>{line(p,.22,[3,7]);packet(p,t/12+i/3)});node(710,635,t/4,6);
+ [[980,10],[980,240],[980,470]].forEach(([x,y],i)=>{map(x,y,260,t,i+1,.42);scan(x,y,260,t,i)});curves(725,57,175,75,t);
+}else if(variant==='evolving'){
+ const positions=[[-35,390],[270,405],[590,395],[910,385]];positions.forEach(([x,y],i)=>{map(x,y,330,t+i*.95,i,.37);scan(x,y,330,t,i);node(x+165,686,t/4+i/4,4)});line([[125,686],[1075,686]],.3,[3,8]);packet([[125,686],[1075,686]],t/12);
+ bubble(35,45,205,t/12);bubble(270,62,220,t/12+.25,true);line([[240,70],[265,70]],.2);curves(1020,52,190,85,t);
+}else{
+ bubble(35,44,235,t/12);bubble(82,108,235,t/12+.2,true);bubble(35,172,235,t/12+.4);bubble(82,236,235,t/12+.6,true);
+ map(25,410,270,t,0,.32);map(965,15,285,t,1,.4);map(955,345,310,t,2,.4);
+ const p=[[315,132],[420,132],[420,46],[930,46],[1040,132]];line(p,.18,[3,7]);packet(p,t/12);
+ const q=[[280,560],[430,660],[820,660],[1040,550]];line(q,.24,[3,7]);packet(q,t/12+.4);curves(535,590,230,80,t);
+}wash();};
+fetch('geometry.json').then(r=>r.json()).then(data=>{cells=data.cells.map(([d,x,y])=>({path:new Path2D(d),x,y}));window.ready=true;renderAt(0);if(!new URLSearchParams(location.search).has('render')){const start=performance.now();function tick(now){renderAt((now-start)/1000);requestAnimationFrame(tick)}requestAnimationFrame(tick)}});
+</script></body></html>

@@ -1,0 +1,170 @@
+{
+  "app": "planIt",
+  "captured_at": "2026-10-25T21:05:41.234037+00:00",
+  "notes": "Direct browser screenshots, without retouching or fabricated UI. Future values are scenarios, not validated forecasts. No saved scenes changed during capture.",
+  "screenshots": [
+    {
+      "file": "01-welcome.png",
+      "caption": "planIt \u2014 community land-planning welcome screen.",
+      "url": "http://127.0.0.1:8780/",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "02-saved-projects.png",
+      "caption": "Current hackathon workspace and saved alternatives, as visible in one window.",
+      "url": "http://127.0.0.1:8780/#projects",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "03-san-francisco-starting-landscape.png",
+      "caption": "2021 satellite-derived land cover carried forward unchanged to 2026.",
+      "url": "http://127.0.0.1:8780/#scene/707e96c3d23b4ada9335e761912a0678?year=2026&layer=cover",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "04-bayview-before-growth-2026.png",
+      "caption": "Bayview proposal at the intervention year, before modeled vegetation growth.",
+      "url": "http://127.0.0.1:8780/#scene/819d4ebed8c84b21bb51925e3ad39fce?year=2026&layer=ndvi&focus=14:70,15:69,16:71,14:71,16:69,14:69,15:72,17:70,16:72,17:71,13:70,15:68,17:69,13:71,16:68,13:69,14:68,13:72,15:73,17:68,18:70,16:73,18:71,13:68,18:69,12:70,15:67,12:71,16:67,12:69,14:67,18:72,18:68,12:72,17:67,12:68,13:67",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "05-bayview-greening-2046.png",
+      "caption": "Same Bayview footprint and camera in 2046, after modeled growth. Hypothetical 100.73 ha land-cover substitution.",
+      "url": "http://127.0.0.1:8780/#scene/819d4ebed8c84b21bb51925e3ad39fce?year=2046&layer=ndvi&focus=14:70,15:69,16:71,14:71,16:69,14:69,15:72,17:70,16:72,17:71,13:70,15:68,17:69,13:71,16:68,13:69,14:68,13:72,15:73,17:68,18:70,16:73,18:71,13:68,18:69,12:70,15:67,12:71,16:67,12:69,14:67,18:72,18:68,12:72,17:67,12:68,13:67",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "06-compare-greening-proposals.png",
+      "caption": "Three equal-area greening alternatives compared at 2046, with an unchanged reference.",
+      "url": "http://127.0.0.1:8780/#compare/819d4ebed8c84b21bb51925e3ad39fce,5ce58eac2c0c4a149d3dad17e9fb715b,02571b5ce86e4856bef5271162d6d57b?year=2046&layer=ndvi",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "07-spatial-variation.png",
+      "caption": "Cell-by-cell NDVI variation between the three proposals; descriptive spread, not forecast uncertainty.",
+      "url": "http://127.0.0.1:8780/#compare/819d4ebed8c84b21bb51925e3ad39fce,5ce58eac2c0c4a149d3dad17e9fb715b,02571b5ce86e4856bef5271162d6d57b?year=2046&layer=ndvi",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "08-productivity-performance.png",
+      "caption": "Modeled productivity performance: elapsed mean NDVI relative to the scene-local comparable-cover benchmark.",
+      "url": "http://127.0.0.1:8780/#scene/819d4ebed8c84b21bb51925e3ad39fce?year=2046&layer=performance&focus=14:70,15:69,16:71,14:71,16:69,14:69,15:72,17:70,16:72,17:71,13:70,15:68,17:69,13:71,16:68,13:69,14:68,13:72,15:73,17:68,18:70,16:73,18:71,13:68,18:69,12:70,15:67,12:71,16:67,12:69,14:67,18:72,18:68,12:72,17:67,12:68,13:67",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "09-model-assumptions.png",
+      "caption": "In-app model equations, provenance and explicit assumptions.",
+      "url": "http://127.0.0.1:8780/#scene/819d4ebed8c84b21bb51925e3ad39fce?year=2046&layer=performance&focus=14:70,15:69,16:71,14:71,16:69,14:69,15:72,17:70,16:72,17:71,13:70,15:68,17:69,13:71,16:68,13:69,14:68,13:72,15:73,17:68,18:70,16:73,18:71,13:68,18:69,12:70,15:67,12:71,16:67,12:69,14:67,18:72,18:68,12:72,17:67,12:68,13:67",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "10-game-character-selection.png",
+      "caption": "Three playable challenges: grow a forest, build with care, and replan the city.",
+      "url": "http://127.0.0.1:8780/#scene/819d4ebed8c84b21bb51925e3ad39fce?year=2046&layer=performance&focus=14:70,15:69,16:71,14:71,16:69,14:69,15:72,17:70,16:72,17:71,13:70,15:68,17:69,13:71,16:68,13:69,14:68,13:72,15:73,17:68,18:70,16:73,18:71,13:68,18:69,12:70,15:67,12:71,16:67,12:69,14:67,18:72,18:68,12:72,17:67,12:68,13:67",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "11-game-san-francisco-grow-a-forest.png",
+      "caption": "Geoffrey\u2019s Grow a forest challenge on the saved San Francisco landscape.",
+      "url": "http://127.0.0.1:8780/static/play/index.html?scene=707e96c3d23b4ada9335e761912a0678&year=2026&character=geoffrey",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "12-game-san-francisco-land-health.png",
+      "caption": "The same San Francisco game with the modeled productivity performance overlay enabled.",
+      "url": "http://127.0.0.1:8780/static/play/index.html?scene=707e96c3d23b4ada9335e761912a0678&year=2026&character=geoffrey",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "13-new-york-manhattan.png",
+      "caption": "The saved Manhattan Island design, viewed on its own geographic baseline.",
+      "url": "http://127.0.0.1:8780/#scene/6c56d877dbd24af58002bfdcc7c302ba?year=2021&layer=cover",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "14-new-york-alternative-comparison.png",
+      "caption": "Existing hypothetical north, south and west Manhattan airport scenarios compared at the same year, 2046.",
+      "url": "http://127.0.0.1:8780/#compare/e883fbbc30704a26a0566e58724b7b1c,b26f21e136764debb8430559c8430eaf,eec49b7da30044959a33e405a7e7cfbb?year=2046&layer=ndvi",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "15-new-york-spatial-variation.png",
+      "caption": "Spatial NDVI variation between the saved Manhattan alternatives in 2046.",
+      "url": "http://127.0.0.1:8780/#compare/e883fbbc30704a26a0566e58724b7b1c,b26f21e136764debb8430559c8430eaf,eec49b7da30044959a33e405a7e7cfbb?year=2046&layer=ndvi",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "16-game-new-york-build-with-care.png",
+      "caption": "Paul\u2019s Build with care challenge on the saved Manhattan Island design.",
+      "url": "http://127.0.0.1:8780/static/play/index.html?scene=6c56d877dbd24af58002bfdcc7c302ba&year=2021&character=paul",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "17-amayaga-soil-carbon-comparison.png",
+      "caption": "Saved Amayaga alternatives compared using modeled soil carbon in 2046. Titles describe saved proposals; later manual edits remain included.",
+      "url": "http://127.0.0.1:8780/#compare/ec1c502e090a412cb1e677d2a4bf5349,a007b7ce21bb40a38badb3639f4fff2c?year=2046&layer=soc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "18-game-amayaga-replan.png",
+      "caption": "Lionel\u2019s Replan the city challenge opened on the saved Amayaga landscape; the challenge title is generic.",
+      "url": "http://127.0.0.1:8780/static/play/index.html?scene=ec1c502e090a412cb1e677d2a4bf5349&year=2046&character=lionel",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    }
+  ],
+  "browser_errors": []
+}

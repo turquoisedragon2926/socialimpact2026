@@ -1,0 +1,98 @@
+{
+  "app": "planIt",
+  "captured_at": "2026-10-25T20:59:55.408610+00:00",
+  "notes": "Direct browser screenshots, without retouching or fabricated UI. Future values are scenarios, not validated forecasts. No saved scenes changed during capture.",
+  "screenshots": [
+    {
+      "file": "01-welcome.png",
+      "caption": "planIt \u2014 community land-planning welcome screen.",
+      "url": "http://127.0.0.1:8780/",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "02-saved-projects.png",
+      "caption": "Current hackathon workspace and saved alternatives.",
+      "url": "http://127.0.0.1:8780/#projects",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "03-san-francisco-starting-landscape.png",
+      "caption": "2021 satellite-derived land cover carried forward unchanged to 2026.",
+      "url": "http://127.0.0.1:8780/#scene/707e96c3d23b4ada9335e761912a0678?year=2026&layer=cover",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "04-bayview-before-growth-2026.png",
+      "caption": "Bayview proposal at the intervention year, before modeled vegetation growth.",
+      "url": "http://127.0.0.1:8780/#scene/819d4ebed8c84b21bb51925e3ad39fce?year=2026&layer=ndvi&focus=14:70,15:69,16:71,14:71,16:69,14:69,15:72,17:70,16:72,17:71,13:70,15:68,17:69,13:71,16:68,13:69,14:68,13:72,15:73,17:68,18:70,16:73,18:71,13:68,18:69,12:70,15:67,12:71,16:67,12:69,14:67,18:72,18:68,12:72,17:67,12:68,13:67",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "05-bayview-greening-2046.png",
+      "caption": "Same Bayview footprint and camera in 2046, after modeled growth. Hypothetical 100.73 ha land-cover substitution.",
+      "url": "http://127.0.0.1:8780/#scene/819d4ebed8c84b21bb51925e3ad39fce?year=2046&layer=ndvi&focus=14:70,15:69,16:71,14:71,16:69,14:69,15:72,17:70,16:72,17:71,13:70,15:68,17:69,13:71,16:68,13:69,14:68,13:72,15:73,17:68,18:70,16:73,18:71,13:68,18:69,12:70,15:67,12:71,16:67,12:69,14:67,18:72,18:68,12:72,17:67,12:68,13:67",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "06-compare-greening-proposals.png",
+      "caption": "Three equal-area greening alternatives compared at 2046, with an unchanged reference.",
+      "url": "http://127.0.0.1:8780/#compare/819d4ebed8c84b21bb51925e3ad39fce,5ce58eac2c0c4a149d3dad17e9fb715b,02571b5ce86e4856bef5271162d6d57b?year=2046&layer=ndvi",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "07-spatial-variation.png",
+      "caption": "Cell-by-cell NDVI variation between the three proposals; descriptive spread, not forecast uncertainty.",
+      "url": "http://127.0.0.1:8780/#compare/819d4ebed8c84b21bb51925e3ad39fce,5ce58eac2c0c4a149d3dad17e9fb715b,02571b5ce86e4856bef5271162d6d57b?year=2046&layer=ndvi",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "08-productivity-performance.png",
+      "caption": "Modeled productivity performance: elapsed mean NDVI relative to the scene-local comparable-cover benchmark.",
+      "url": "http://127.0.0.1:8780/#scene/819d4ebed8c84b21bb51925e3ad39fce?year=2046&layer=performance&focus=14:70,15:69,16:71,14:71,16:69,14:69,15:72,17:70,16:72,17:71,13:70,15:68,17:69,13:71,16:68,13:69,14:68,13:72,15:73,17:68,18:70,16:73,18:71,13:68,18:69,12:70,15:67,12:71,16:67,12:69,14:67,18:72,18:68,12:72,17:67,12:68,13:67",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "09-model-assumptions.png",
+      "caption": "In-app model equations, provenance and explicit assumptions.",
+      "url": "http://127.0.0.1:8780/#scene/819d4ebed8c84b21bb51925e3ad39fce?year=2046&layer=performance&focus=14:70,15:69,16:71,14:71,16:69,14:69,15:72,17:70,16:72,17:71,13:70,15:68,17:69,13:71,16:68,13:69,14:68,13:72,15:73,17:68,18:70,16:73,18:71,13:68,18:69,12:70,15:67,12:71,16:67,12:69,14:67,18:72,18:68,12:72,17:67,12:68,13:67",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "10-mobile-greening.png",
+      "caption": "Mobile view of the Bayview greening proposal in 2046.",
+      "url": "http://127.0.0.1:8780/#scene/819d4ebed8c84b21bb51925e3ad39fce?year=2046&layer=ndvi&focus=14:70,15:69,16:71,14:71,16:69,14:69,15:72,17:70,16:72,17:71,13:70,15:68,17:69,13:71,16:68,13:69,14:68,13:72,15:73,17:68,18:70,16:73,18:71,13:68,18:69,12:70,15:67,12:71,16:67,12:69,14:67,18:72,18:68,12:72,17:67,12:68,13:67",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      }
+    }
+  ],
+  "browser_errors": []
+}

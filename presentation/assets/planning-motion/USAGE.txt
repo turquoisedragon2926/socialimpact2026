@@ -1,0 +1,48 @@
+MAIN DECK
+The animated opening is now the first slide of presentation/deck.html, with the GIF embedded. Advance normally to the presenters. The separate planit.html remains an optional standalone preview.
+
+PLANIT OPENING
+Open planit.html through the presentation server. Click planIt or press Enter / Right / Space to continue to deck.html, which opens on the presenter introduction slide.
+The six-map loop uses the deck’s exact dark green (#203d34), muted changing fields, and animated white waves at the bottom left. The title is an HTML overlay, so the GIF and MP4 remain reusable backgrounds.
+
+SIX-MAP BACKGROUND (LATEST)
+Three evenly spaced columns, two rows. Land cover, NDVI, soil carbon, productivity, carbon change, and degradation all evolve visibly from a shared synthetic time-varying field. Discrete land-cover transitions and moving patches remain visible under the muted green treatment. A clear horizontal band between rows leaves space for the slide headline.
+
+![bg](assets/planning-motion/sf-agent-sixmaps.gif)
+
+Matching video: sf-agent-sixmaps.mp4. Both loop for 12 seconds. Rebuild only this variant:
+uv run --with playwright --with imageio-ffmpeg python render.py sixmaps
+
+The functions illustrate changes; none represent physical predictions or measured values.
+
+PLANNING MOTION · SEPARATE MARP ASSETS
+
+Three 12-second seamless loops. Muted ivory/sage/mauve, with a quiet center for foreground content.
+- sf-agent-branching: a prompt, a planning node, and three alternatives.
+- sf-agent-evolving: parallel SF maps with changing green/purple cells.
+- sf-agent-codesign: a conversation, map edits, and comparison traces.
+
+From presentation/slides.md, use an animated GIF background:
+
+![bg](assets/planning-motion/sf-agent-branching.gif)
+
+Use the matching GIF for the other two variants. GIFs loop automatically in the HTML presentation.
+The MP4 exports are higher quality and smaller; preview.html demonstrates autoplaying, muted video loops. Use the GIF snippet above for native Marp background syntax.
+
+Test the actual exported HTML in the presenting browser. This folder's example.marp.md and example.html use animated GIF backgrounds. preview.html uses MP4 and has an optional foreground overlay preview. No main slide files were edited.
+
+Present the HTML version for motion. PDF cannot animate, and the existing rasterized PowerPoint export does not preserve these loops. No static fallback assets are supplied.
+
+EDITABLE SOURCE
+animation.html + geometry.json. Open via an HTTP server; ?mode=branching, evolving, or codesign. The source loops continuously and window.renderAt(seconds, mode) provides deterministic frames.
+Rebuild exports: uv run --with playwright --with imageio-ffmpeg python render.py
+
+PROVENANCE
+Geographic cell shapes: bundled SF 2021 baseline (San Francisco neighborhood footprint).
+All colors, evolving states, agent activity, paths and curves are synthetic illustration, not model output, predictions or measured land degradation. The diagrams do not imply a recommended design. The imagery and motion are code-generated; no image-generation service was used for the final assets.
+
+VALIDATION (2026-10-25)
+Chromium and WebKit: all four MP4s decode and advance; the generated Marp HTML visibly animates; no page errors. Each GIF has 144 frames and loops forever. For every source animation, frames at t=0 and t=12 are identical.
+
+
+Opening page validation: Chromium and WebKit both animate the GIF automatically, show planIt, and navigate with Enter to the presenter introduction first slide. Both pages use the same #203d34 background. The opening uses GIF to avoid video autoplay restrictions.

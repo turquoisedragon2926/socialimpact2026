@@ -1,0 +1,9 @@
+{
+  "name": "community-land-planning-slides",
+  "private": true,
+  "scripts": {
+    "build": "python3 build.py",
+    "preview": "marp slides.md --theme theme.css --html --preview"
+  },
+  "devDependencies": {"@marp-team/marp-cli": "4.5.1"}
+}

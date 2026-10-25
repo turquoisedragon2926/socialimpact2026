@@ -1,0 +1,198 @@
+{
+  "sources": [
+    "game-folder/runtime/sf-greening-demo.json",
+    "presentation/assets/provenance.json",
+    "presentation/assets/opening-provenance.json"
+  ],
+  "agent_alternatives": [
+    {
+      "name": "Bayview Hunters Point",
+      "cells": 80,
+      "changed_ha": 217.79999999992606,
+      "selected_mean_start": 0.16065875000004262,
+      "selected_mean_2046": 0.6815578570447959,
+      "whole_scene_metrics": {
+        "area_ha": 12199.4224181998,
+        "known_carbon_ha": 836.0733541816928,
+        "productivity_slope": 0.0004989389982699549,
+        "productivity_state_class_change": 0.054401701003724386,
+        "productivity_performance_ratio": 0.6027704643026599,
+        "productivity_coverage_ha": {
+          "slope": 12010.653857221225,
+          "state_class_change": 12010.653857221225,
+          "performance_ratio": 12010.653857221225
+        },
+        "carbon_change_pct": 0.0,
+        "carbon_tonnes": 48644.174169521066,
+        "carbon_baseline_tonnes": 48644.174169521066,
+        "carbon_change_tonnes": 0.0,
+        "carbon_mean_t_ha": 58.18170609818271,
+        "changed_ha": 217.7999999999261,
+        "cover_ha": {
+          "grass": 823.7948481724393,
+          "bare": 293.3546700114737,
+          "water": 220.99559491015074,
+          "trees": 2280.9131815691417,
+          "built": 8574.862684923773,
+          "crops": 2.5761316779228824,
+          "unknown": 0.023367508587331408,
+          "wetland": 2.901939426327793
+        },
+        "status_ha": {
+          "stable": 836.0733541816928,
+          "unknown": 11363.349064018059
+        },
+        "degradation_ha": {
+          "declining": 0.0,
+          "stable": 814.9018752899138,
+          "improving": 0.0,
+          "unknown": 11384.520542909839
+        },
+        "degrading_ha": 0.0,
+        "degradation_assessed_ha": 814.901875289961,
+        "observed_ndvi": 0.23669489400694602,
+        "simulated_ndvi": 0.24599468205739802,
+        "ndvi_change": 0.00929978805045202,
+        "simulated_ndvi_coverage_ha": 12199.399050691167,
+        "ndvi_coverage_ha": 12199.399050691167
+      }
+    },
+    {
+      "name": "Sunset/Parkside",
+      "cells": 80,
+      "changed_ha": 217.8000000000288,
+      "selected_mean_start": 0.15465249999995467,
+      "selected_mean_2046": 0.6817628959099314,
+      "whole_scene_metrics": {
+        "area_ha": 12199.4224181998,
+        "known_carbon_ha": 836.0733541816928,
+        "productivity_slope": 0.00050488843109215,
+        "productivity_state_class_change": 0.05440170100375005,
+        "productivity_performance_ratio": 0.602609622558696,
+        "productivity_coverage_ha": {
+          "slope": 12010.653857221225,
+          "state_class_change": 12010.653857221225,
+          "performance_ratio": 12010.653857221225
+        },
+        "carbon_change_pct": 0.0,
+        "carbon_tonnes": 48644.174169521066,
+        "carbon_baseline_tonnes": 48644.174169521066,
+        "carbon_change_tonnes": 0.0,
+        "carbon_mean_t_ha": 58.18170609818271,
+        "changed_ha": 217.8000000000288,
+        "cover_ha": {
+          "grass": 825.7757917131413,
+          "bare": 293.41950886555486,
+          "water": 220.99559491015074,
+          "trees": 2281.389097790893,
+          "built": 8572.314681959415,
+          "crops": 2.602436025748923,
+          "unknown": 0.023367508587331408,
+          "wetland": 2.901939426327793
+        },
+        "status_ha": {
+          "stable": 836.0733541816928,
+          "unknown": 11363.349064018059
+        },
+        "degradation_ha": {
+          "declining": 0.0,
+          "stable": 814.9018752899138,
+          "improving": 0.0,
+          "unknown": 11384.520542909839
+        },
+        "degrading_ha": 0.0,
+        "degradation_assessed_ha": 814.901875289961,
+        "observed_ndvi": 0.23669489400694602,
+        "simulated_ndvi": 0.24610557429965316,
+        "ndvi_change": 0.009410680292707158,
+        "simulated_ndvi_coverage_ha": 12199.399050691167,
+        "ndvi_coverage_ha": 12199.399050691167
+      }
+    },
+    {
+      "name": "Potrero Hill",
+      "cells": 80,
+      "changed_ha": 217.79999999992722,
+      "selected_mean_start": 0.13630374999998607,
+      "selected_mean_2046": 0.6647853450170528,
+      "whole_scene_metrics": {
+        "area_ha": 12199.4224181998,
+        "known_carbon_ha": 836.0733541816928,
+        "productivity_slope": 0.000506201823070644,
+        "productivity_state_class_change": 0.05440170100372468,
+        "productivity_performance_ratio": 0.6030266403206634,
+        "productivity_coverage_ha": {
+          "slope": 12010.653857221225,
+          "state_class_change": 12010.653857221225,
+          "performance_ratio": 12010.653857221225
+        },
+        "carbon_change_pct": 0.0,
+        "carbon_tonnes": 48644.174169521066,
+        "carbon_baseline_tonnes": 48644.174169521066,
+        "carbon_change_tonnes": 0.0,
+        "carbon_mean_t_ha": 58.18170609818271,
+        "changed_ha": 217.7999999999273,
+        "cover_ha": {
+          "grass": 825.5301253257174,
+          "bare": 292.5191787215037,
+          "water": 220.99559491015074,
+          "trees": 2282.145776764016,
+          "built": 8572.70399951777,
+          "crops": 2.602436025748923,
+          "unknown": 0.023367508587331408,
+          "wetland": 2.901939426327793
+        },
+        "status_ha": {
+          "stable": 836.0733541816928,
+          "unknown": 11363.349064018059
+        },
+        "degradation_ha": {
+          "declining": 0.0,
+          "stable": 814.9018752899138,
+          "improving": 0.0,
+          "unknown": 11384.520542909839
+        },
+        "degrading_ha": 0.0,
+        "degradation_assessed_ha": 814.901875289961,
+        "observed_ndvi": 0.23669489400694602,
+        "simulated_ndvi": 0.2461300547813744,
+        "ndvi_change": 0.00943516077442838,
+        "simulated_ndvi_coverage_ha": 12199.399050691167,
+        "ndvi_coverage_ha": 12199.399050691167
+      }
+    }
+  ],
+  "agent_copy": "Short example prompts, not verbatim transcripts. Saved agent-created alternatives; selected-area NDVI recomputed using existing pure evaluator. No application writes.",
+  "cell_example": {
+    "id": "19:56",
+    "area_ha": 2.7225,
+    "fractions": {
+      "trees": 0.0625,
+      "grass": 0.036458333333333336,
+      "built": 0.8723958333333334,
+      "bare": 0.028645833333333332
+    },
+    "ndvi": 0.1635,
+    "soc": null
+  },
+  "response_example": {
+    "cell_id": "22:23",
+    "climate": "tropical_moist",
+    "intervention": 2026,
+    "target_year": 2046,
+    "carbon_start": 51.0,
+    "carbon_target": 102.32793209876543,
+    "ndvi_start": 0.5885,
+    "ndvi_target": 0.6999814814814815,
+    "description": "Original saved single tree-conversion scenario, interpolated by documented 20-year SOC and assumed 10-year NDVI responses; not read from the later edited live scene."
+  },
+  "query_example": {
+    "year": 2046,
+    "total_ha": 12199.4224181998,
+    "declining_ha": 157.90499999996152,
+    "unknown_ha": 11284.310408606278,
+    "declining_percent_total": 1.2943645574924085,
+    "unknown_percent_total": 92.49872675752005,
+    "meaning": "Hypothetical SF tree-to-built scenario, separate from greening alternatives. Combined degradation, not productivity performance."
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "synthetic": true,
+  "canvas": [
+    1280,
+    720
+  ],
+  "fps": 20,
+  "gif_fps": 12,
+  "loops": [
+    {
+      "name": "branching",
+      "duration_seconds": 12,
+      "mp4": "sf-agent-branching.mp4",
+      "mp4_bytes": 444271,
+      "gif": "sf-agent-branching.gif",
+      "gif_bytes": 6280287
+    },
+    {
+      "name": "evolving",
+      "duration_seconds": 12,
+      "mp4": "sf-agent-evolving.mp4",
+      "mp4_bytes": 482990,
+      "gif": "sf-agent-evolving.gif",
+      "gif_bytes": 6809017
+    },
+    {
+      "name": "codesign",
+      "duration_seconds": 12,
+      "mp4": "sf-agent-codesign.mp4",
+      "mp4_bytes": 369846,
+      "gif": "sf-agent-codesign.gif",
+      "gif_bytes": 5508969
+    },
+    {
+      "name": "sixmaps",
+      "duration_seconds": 12,
+      "mp4": "sf-agent-sixmaps.mp4",
+      "mp4_bytes": 861737,
+      "gif": "sf-agent-sixmaps.gif",
+      "gif_bytes": 8411889
+    }
+  ],
+  "description": "Synthetic planning-process animations. Geographic cell shapes from bundled SF 2021 baseline; no cell values or curves represent model predictions. No static fallbacks."
+}

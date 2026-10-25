@@ -1,0 +1,32 @@
+[
+  {
+    "asset": "trends-productivity-doc.png",
+    "page": "https://docs.trends.earth/en/latest/for_users/features/unccdreporting.html",
+    "figure": "https://docs.trends.earth/en/latest/_images/indicator_15_3_1_prod_subindicators.png",
+    "capture": "Playwright screenshot of the documentation image element; contents not redrawn"
+  },
+  {
+    "asset": "trends-trajectory-doc.png",
+    "page": "https://docs.trends.earth/en/latest/for_users/features/unccdreporting.html",
+    "figure": "https://docs.trends.earth/en/latest/_images/lp_traj_flow.png",
+    "capture": "Playwright screenshot of the documentation image element; contents not redrawn"
+  },
+  {
+    "asset": "trends-state-doc.png",
+    "page": "https://docs.trends.earth/en/latest/for_users/features/unccdreporting.html",
+    "figure": "https://docs.trends.earth/en/latest/_images/lp_state_flow.png",
+    "capture": "Playwright screenshot of the documentation image element; contents not redrawn"
+  },
+  {
+    "asset": "trends-performance-doc.png",
+    "page": "https://docs.trends.earth/en/latest/for_users/features/unccdreporting.html",
+    "figure": "https://docs.trends.earth/en/latest/_images/lp_perf_flow.png",
+    "capture": "Playwright screenshot of the documentation image element; contents not redrawn"
+  },
+  {
+    "asset": "trends-qgis-doc.png",
+    "page": "https://docs.trends.earth/en/latest/for_users/training/landdegradation.html",
+    "figure": "https://docs.trends.earth/en/latest/_images/sdg15_highlight_sdg_15_3_1_step1.png",
+    "capture": "Original tutorial screenshot, downloaded unchanged"
+  }
+]
